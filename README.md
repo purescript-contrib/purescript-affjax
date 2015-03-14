@@ -5,7 +5,7 @@
 #### `runAffjax`
 
 ``` purescript
-runAffjax :: forall e a. AffjaxRequest a -> Aff (ajax :: Ajax | e) AjaxResponse
+runAffjax :: forall e c a. AffjaxRequest c a -> Aff (ajax :: Ajax | e) AjaxResponse
 ```
 
 
@@ -15,7 +15,7 @@ runAffjax :: forall e a. AffjaxRequest a -> Aff (ajax :: Ajax | e) AjaxResponse
 #### `AffjaxRequest`
 
 ``` purescript
-type AffjaxRequest = FreeC AffjaxRequestF
+type AffjaxRequest c = FreeC (AffjaxRequestF c)
 ```
 
 A free monad for building AJAX requests
@@ -23,11 +23,11 @@ A free monad for building AJAX requests
 #### `AffjaxRequestF`
 
 ``` purescript
-data AffjaxRequestF a
+data AffjaxRequestF c a
   = SetURL String a
   | SetMethod MethodName a
   | AddHeader Header a
-  | SetContent (Maybe Content) a
+  | SetContent (Maybe (Content c)) a
   | SetUsername (Maybe String) a
   | SetPassword (Maybe String) a
 ```
@@ -37,7 +37,7 @@ The request DSL AST.
 #### `affjaxRequest`
 
 ``` purescript
-affjaxRequest :: forall a. AffjaxRequest a -> AjaxRequest
+affjaxRequest :: forall c a. AffjaxRequest c a -> AjaxRequest c
 ```
 
 Runs the DSL, producing an `AjaxRequest` object.
@@ -45,7 +45,7 @@ Runs the DSL, producing an `AjaxRequest` object.
 #### `url`
 
 ``` purescript
-url :: String -> AffjaxRequest Unit
+url :: forall c. String -> AffjaxRequest c Unit
 ```
 
 Sets the URL for a request.
@@ -53,7 +53,7 @@ Sets the URL for a request.
 #### `method`
 
 ``` purescript
-method :: Verb -> AffjaxRequest Unit
+method :: forall c. Verb -> AffjaxRequest c Unit
 ```
 
 Sets the request method based on an HTTP verb.
@@ -61,7 +61,7 @@ Sets the request method based on an HTTP verb.
 #### `method'`
 
 ``` purescript
-method' :: MethodName -> AffjaxRequest Unit
+method' :: forall c. MethodName -> AffjaxRequest c Unit
 ```
 
 Sets the request method.
@@ -69,7 +69,7 @@ Sets the request method.
 #### `header`
 
 ``` purescript
-header :: HeaderHead -> String -> AffjaxRequest Unit
+header :: forall c. HeaderHead -> String -> AffjaxRequest c Unit
 ```
 
 Adds a header to the request using a key and value.
@@ -77,7 +77,7 @@ Adds a header to the request using a key and value.
 #### `header'`
 
 ``` purescript
-header' :: Header -> AffjaxRequest Unit
+header' :: forall c. Header -> AffjaxRequest c Unit
 ```
 
 Adds a header to the request using a `Header` record.
@@ -85,7 +85,7 @@ Adds a header to the request using a `Header` record.
 #### `content`
 
 ``` purescript
-content :: Content -> AffjaxRequest Unit
+content :: forall c. Content c -> AffjaxRequest c Unit
 ```
 
 Sets the content for the request.
@@ -93,7 +93,7 @@ Sets the content for the request.
 #### `content'`
 
 ``` purescript
-content' :: Maybe Content -> AffjaxRequest Unit
+content' :: forall c. Maybe (Content c) -> AffjaxRequest c Unit
 ```
 
 Sets the content for the request, with the option of setting it to
@@ -102,7 +102,7 @@ Sets the content for the request, with the option of setting it to
 #### `username`
 
 ``` purescript
-username :: String -> AffjaxRequest Unit
+username :: forall c. String -> AffjaxRequest c Unit
 ```
 
 Sets the username for the request.
@@ -110,7 +110,7 @@ Sets the username for the request.
 #### `username'`
 
 ``` purescript
-username' :: Maybe String -> AffjaxRequest Unit
+username' :: forall c. Maybe String -> AffjaxRequest c Unit
 ```
 
 Sets the username for the request, with the option of setting it to
@@ -119,7 +119,7 @@ Sets the username for the request, with the option of setting it to
 #### `password`
 
 ``` purescript
-password :: String -> AffjaxRequest Unit
+password :: forall c. String -> AffjaxRequest c Unit
 ```
 
 Sets the password for the request.
@@ -127,7 +127,7 @@ Sets the password for the request.
 #### `password'`
 
 ``` purescript
-password' :: Maybe String -> AffjaxRequest Unit
+password' :: forall c. Maybe String -> AffjaxRequest c Unit
 ```
 
 Sets the password for the request, with the option of setting it to
@@ -147,7 +147,7 @@ The event type for AJAX requests.
 #### `AjaxRequest`
 
 ``` purescript
-type AjaxRequest = { password :: Maybe String, username :: Maybe String, content :: Maybe Content, headers :: [Header], method :: MethodName, url :: String }
+type AjaxRequest a = { password :: Maybe String, username :: Maybe String, content :: Maybe (Content a), headers :: [Header], method :: MethodName, url :: String }
 ```
 
 The parameters for an AJAX request.
@@ -164,8 +164,12 @@ A HTTP method name: `GET`, `POST`, etc.
 #### `Content`
 
 ``` purescript
-data Content
-  = Content String
+data Content a
+  = ArrayViewContent (ArrayView a)
+  | BlobContent Blob
+  | DocumentContent Document
+  | TextContent String
+  | FormDataContent FormData
 ```
 
 #### `AjaxResponse`
@@ -177,7 +181,7 @@ newtype AjaxResponse
 #### `defaultRequest`
 
 ``` purescript
-defaultRequest :: AjaxRequest
+defaultRequest :: forall c. AjaxRequest c
 ```
 
 A basic request, `GET /` with no particular headers or credentials.
@@ -185,7 +189,7 @@ A basic request, `GET /` with no particular headers or credentials.
 #### `ajax`
 
 ``` purescript
-ajax :: forall e. AjaxRequest -> Aff (ajax :: Ajax | e) AjaxResponse
+ajax :: forall e a. AjaxRequest a -> Aff (ajax :: Ajax | e) AjaxResponse
 ```
 
 Make an AJAX request.

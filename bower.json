@@ -26,6 +26,8 @@
     "purescript-arrays": "~0.3.3",
     "purescript-maybe": "~0.2.1",
     "purescript-nullable": "~0.1.1",
-    "purescript-http": "~0.2.0"
+    "purescript-http": "~0.2.0",
+    "purescript-arraybuffer-types": "~0.1.1",
+    "purescript-dom": "#additions"
   }
 }

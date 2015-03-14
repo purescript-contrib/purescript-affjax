@@ -24,19 +24,19 @@ import Network.Affjax.Request
 import Network.HTTP (Verb(..), Header(..), HeaderHead())
 
 -- | A free monad for building AJAX requests
-type AffjaxRequest = FreeC AffjaxRequestF
+type AffjaxRequest c = FreeC (AffjaxRequestF c)
 
 -- | The request DSL AST.
-data AffjaxRequestF a
+data AffjaxRequestF c a
   = SetURL String a
   | SetMethod MethodName a
   | AddHeader Header a
-  | SetContent (Maybe Content) a
+  | SetContent (Maybe (Content c)) a
   | SetUsername (Maybe String) a
   | SetPassword (Maybe String) a
 
 -- | The interpreter for the request DSL AST.
-affjaxN :: Natural AffjaxRequestF (State AjaxRequest)
+affjaxN :: forall c. Natural (AffjaxRequestF c) (State (AjaxRequest c))
 affjaxN (SetURL url a) = const a <$> modify (_ { url = url })
 affjaxN (SetMethod method a) = const a <$> modify (_ { method = method })
 affjaxN (AddHeader header a) = const a <$> modify (\req -> req { headers = header : req.headers })
@@ -45,7 +45,7 @@ affjaxN (SetUsername username a) = const a <$> modify (_ { username = username }
 affjaxN (SetPassword password a) = const a <$> modify (_ { password = password })
 
 -- | Runs the DSL, producing an `AjaxRequest` object.
-affjaxRequest :: forall a. AffjaxRequest a -> AjaxRequest
+affjaxRequest :: forall c a. AffjaxRequest c a -> AjaxRequest c
 affjaxRequest = (`execState` defaultRequest) <<< runFreeCM affjaxN
 
 -- | Take a standard HTTP verb and allow it to be used as an AJAX request
@@ -54,48 +54,48 @@ methodNameFromVerb :: Verb -> MethodName
 methodNameFromVerb = MethodName <<< show
 
 -- | Sets the URL for a request.
-url :: String -> AffjaxRequest Unit
+url :: forall c. String -> AffjaxRequest c Unit
 url url = liftFC (SetURL url unit)
 
 -- | Sets the request method based on an HTTP verb.
-method :: Verb -> AffjaxRequest Unit
+method :: forall c. Verb -> AffjaxRequest c Unit
 method = method' <<< methodNameFromVerb
 
 -- | Sets the request method.
-method' :: MethodName -> AffjaxRequest Unit
+method' :: forall c. MethodName -> AffjaxRequest c Unit
 method' meth = liftFC (SetMethod meth unit)
 
 -- | Adds a header to the request using a key and value.
-header :: HeaderHead -> String -> AffjaxRequest Unit
+header :: forall c. HeaderHead -> String -> AffjaxRequest c Unit
 header key value = header' (Header key value)
 
 -- | Adds a header to the request using a `Header` record.
-header' :: Header -> AffjaxRequest Unit
+header' :: forall c. Header -> AffjaxRequest c Unit
 header' header = liftFC (AddHeader header unit)
 
 -- | Sets the content for the request.
-content :: Content -> AffjaxRequest Unit
+content :: forall c. Content c -> AffjaxRequest c Unit
 content value = content' (Just value)
 
 -- | Sets the content for the request, with the option of setting it to
 -- | `Nothing`.
-content' :: Maybe Content -> AffjaxRequest Unit
+content' :: forall c. Maybe (Content c) -> AffjaxRequest c Unit
 content' value = liftFC (SetContent value unit)
 
 -- | Sets the username for the request.
-username :: String -> AffjaxRequest Unit
+username :: forall c. String -> AffjaxRequest c Unit
 username value = username' (Just value)
 
 -- | Sets the username for the request, with the option of setting it to
 -- | `Nothing`.
-username' :: Maybe String -> AffjaxRequest Unit
+username' :: forall c. Maybe String -> AffjaxRequest c Unit
 username' value = liftFC (SetUsername value unit)
 
 -- | Sets the password for the request.
-password :: String -> AffjaxRequest Unit
+password :: forall c. String -> AffjaxRequest c Unit
 password value = password' (Just value)
 
 -- | Sets the password for the request, with the option of setting it to
 -- | `Nothing`.
-password' :: Maybe String -> AffjaxRequest Unit
+password' :: forall c. Maybe String -> AffjaxRequest c Unit
 password' value = liftFC (SetPassword value unit)
