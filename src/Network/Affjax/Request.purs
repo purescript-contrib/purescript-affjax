@@ -1,0 +1,93 @@
+module Network.Affjax.Request
+  ( Ajax()
+  , AjaxRequest()
+  , MethodName(..)
+  , Content(..)
+  , AjaxResponse()
+  , defaultRequest
+  , ajax
+  ) where
+
+import Control.Monad.Aff (Aff(), EffA(), makeAff)
+import Control.Monad.Eff (Eff())
+import Control.Monad.Eff.Exception(Error())
+import Data.Array ()
+import Data.Function (Fn8(), runFn8)
+import Data.Maybe (Maybe(..), maybe)
+import Data.Nullable (Nullable(), toNullable)
+import Network.HTTP (Header(..))
+
+-- | The event type for AJAX requests.
+foreign import data Ajax :: !
+
+-- | The parameters for an AJAX request.
+type AjaxRequest =
+  { url :: String
+  , method :: MethodName
+  , headers :: [Header]
+  , content :: Maybe Content
+  , username :: Maybe String
+  , password :: Maybe String
+  }
+
+-- | A HTTP method name: `GET`, `POST`, etc.
+newtype MethodName = MethodName String
+
+-- | The types of data that can be set in an AJAX request.
+-- TODO: how do we want to deal with the various content types?
+data Content = Content String
+
+-- TODO: probably not this? Do we want to deal with other responses, include headers, etc?
+newtype AjaxResponse = AjaxResponse String
+
+-- | A basic request, `GET /` with no particular headers or credentials.
+defaultRequest :: AjaxRequest
+defaultRequest =
+  { url: "/"
+  , method: MethodName "GET"
+  , headers: []
+  , content: Nothing
+  , username: Nothing
+  , password: Nothing
+  }
+
+-- | Make an AJAX request.
+ajax :: forall e. AjaxRequest -> Aff (ajax :: Ajax | e) AjaxResponse
+ajax req = makeAff $ runFn8
+  unsafeAjax req.url
+             (runMethodName req.method)
+             (runHeader <$> req.headers)
+             (toNullable $ runContent <$> req.content)
+             (toNullable req.username)
+             (toNullable req.password)
+  where
+  runMethodName (MethodName name) = name
+  runHeader (Header header value) = { header: show header, value: value }
+  runContent (Content content) = content
+
+foreign import unsafeAjax
+  """
+  function unsafeAjax (url, method, headers, content, username, password, errback, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open(method, url, true, username, password);
+    for (var i = 0, header; header = headers[i]; i++) {
+      xhr.setRequestHeader(header.header, header.value);
+    }
+    xhr.onerror = function (err) {
+      errback(err);
+    };
+    xhr.onload = function () {
+      if (xhr.status === 200) callback(xhr.response);
+      else errback(new Error("Request returned status " + xhr.status));
+    }
+    xhr.send(content);
+  }
+  """ :: forall e a. Fn8 String
+                         String
+                         [{ header :: String, value :: String }]
+                         (Nullable a)
+                         (Nullable String)
+                         (Nullable String)
+                         (Error -> Eff (ajax :: Ajax | e) Unit)
+                         (AjaxResponse -> Eff (ajax :: Ajax | e) Unit)
+                         (EffA (ajax :: Ajax | e) Unit)
