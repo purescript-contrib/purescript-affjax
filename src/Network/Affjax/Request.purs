@@ -96,11 +96,11 @@ foreign import unsafeAjax
       xhr.setRequestHeader(header.header, header.value);
     }
     xhr.onerror = function (err) {
-      errback(err);
+      errback(err)();
     };
     xhr.onload = function () {
-      if (xhr.status === 200) callback(xhr.response);
-      else errback(new Error("Request returned status " + xhr.status));
+      if (xhr.status === 200) callback(xhr.response)();
+      else errback(new Error("Request returned status " + xhr.status))();
     }
     xhr.send(content);
   }
