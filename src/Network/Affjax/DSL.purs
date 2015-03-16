@@ -4,7 +4,6 @@ module Network.Affjax.DSL
   , affjaxRequest
   , url
   , method
-  , method'
   , header
   , header'
   , content
@@ -20,8 +19,8 @@ import Control.Monad.State (State(), execState)
 import Control.Monad.State.Class (modify)
 import Data.Coyoneda (Natural())
 import Data.Maybe (Maybe(..))
+import Network.Affjax.HTTP
 import Network.Affjax.Request
-import Network.HTTP (Verb(..), Header(..), HeaderHead())
 
 -- | A free monad for building AJAX requests
 type AffjaxRequest c = FreeC (AffjaxRequestF c)
@@ -29,7 +28,7 @@ type AffjaxRequest c = FreeC (AffjaxRequestF c)
 -- | The request DSL AST.
 data AffjaxRequestF c a
   = SetURL String a
-  | SetMethod MethodName a
+  | SetMethod Method a
   | AddHeader Header a
   | SetContent (Maybe (Content c)) a
   | SetUsername (Maybe String) a
@@ -48,22 +47,13 @@ affjaxN (SetPassword password a) = const a <$> modify (_ { password = password }
 affjaxRequest :: forall c a. AffjaxRequest c a -> AjaxRequest c
 affjaxRequest = (`execState` defaultRequest) <<< runFreeCM affjaxN
 
--- | Take a standard HTTP verb and allow it to be used as an AJAX request
--- | method.
-methodNameFromVerb :: Verb -> MethodName
-methodNameFromVerb = MethodName <<< show
-
 -- | Sets the URL for a request.
 url :: forall c. String -> AffjaxRequest c Unit
 url url = liftFC (SetURL url unit)
 
 -- | Sets the request method based on an HTTP verb.
-method :: forall c. Verb -> AffjaxRequest c Unit
-method = method' <<< methodNameFromVerb
-
--- | Sets the request method.
-method' :: forall c. MethodName -> AffjaxRequest c Unit
-method' meth = liftFC (SetMethod meth unit)
+method :: forall c. Method -> AffjaxRequest c Unit
+method meth = liftFC (SetMethod meth unit)
 
 -- | Adds a header to the request using a key and value.
 header :: forall c. HeaderHead -> String -> AffjaxRequest c Unit

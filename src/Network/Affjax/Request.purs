@@ -1,7 +1,6 @@
 module Network.Affjax.Request
   ( Ajax()
   , AjaxRequest()
-  , MethodName(..)
   , Content(..)
   , AjaxResponse()
   , defaultRequest
@@ -19,7 +18,7 @@ import Data.Nullable (Nullable(), toNullable)
 import DOM (Document())
 import DOM.File (Blob())
 import DOM.XHR (FormData())
-import Network.HTTP (Header(..))
+import Network.Affjax.HTTP
 
 -- | The event type for AJAX requests.
 foreign import data Ajax :: !
@@ -27,15 +26,12 @@ foreign import data Ajax :: !
 -- | The parameters for an AJAX request.
 type AjaxRequest a =
   { url :: String
-  , method :: MethodName
+  , method :: Method
   , headers :: [Header]
   , content :: Maybe (Content a)
   , username :: Maybe String
   , password :: Maybe String
   }
-
--- | A HTTP method name: `GET`, `POST`, etc.
-newtype MethodName = MethodName String
 
 -- | The types of data that can be set in an AJAX request.
 data Content a
@@ -52,7 +48,7 @@ newtype AjaxResponse = AjaxResponse String
 defaultRequest :: forall c. AjaxRequest c
 defaultRequest =
   { url: "/"
-  , method: MethodName "GET"
+  , method: GET
   , headers: []
   , content: Nothing
   , username: Nothing
@@ -69,7 +65,8 @@ ajax req = makeAff $ runFn8
              (toNullable req.username)
              (toNullable req.password)
   where
-  runMethodName (MethodName name) = name
+  runMethodName (CustomMethod name) = name
+  runMethodName method = show method
   runHeader (Header header value) = { header: show header, value: value }
   runContent :: forall c. Content c -> XHRContent
   runContent (ArrayViewContent av) = unsafeToXHRContent av
@@ -101,7 +98,7 @@ foreign import unsafeAjax
     xhr.onload = function () {
       if (xhr.status === 200) callback(xhr.response)();
       else errback(new Error("Request returned status " + xhr.status))();
-    }
+    };
     xhr.send(content);
   }
   """ :: forall e. Fn8 String
