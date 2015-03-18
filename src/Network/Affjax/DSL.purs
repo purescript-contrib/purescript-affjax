@@ -5,7 +5,6 @@ module Network.Affjax.DSL
   , url
   , method
   , header
-  , header'
   , content
   , content'
   , username
@@ -19,8 +18,9 @@ import Control.Monad.State (State(), execState)
 import Control.Monad.State.Class (modify)
 import Data.Coyoneda (Natural())
 import Data.Maybe (Maybe(..))
-import Network.Affjax.HTTP
 import Network.Affjax.Request
+import Network.HTTP.Method
+import Network.HTTP.RequestHeader
 
 -- | A free monad for building AJAX requests
 type AffjaxRequest c = FreeC (AffjaxRequestF c)
@@ -29,7 +29,7 @@ type AffjaxRequest c = FreeC (AffjaxRequestF c)
 data AffjaxRequestF c a
   = SetURL String a
   | SetMethod Method a
-  | AddHeader Header a
+  | AddHeader RequestHeader a
   | SetContent (Maybe (Content c)) a
   | SetUsername (Maybe String) a
   | SetPassword (Maybe String) a
@@ -55,13 +55,9 @@ url url = liftFC (SetURL url unit)
 method :: forall c. Method -> AffjaxRequest c Unit
 method meth = liftFC (SetMethod meth unit)
 
--- | Adds a header to the request using a key and value.
-header :: forall c. HeaderHead -> String -> AffjaxRequest c Unit
-header key value = header' (Header key value)
-
--- | Adds a header to the request using a `Header` record.
-header' :: forall c. Header -> AffjaxRequest c Unit
-header' header = liftFC (AddHeader header unit)
+-- | Adds a header to the request.
+header :: forall c. RequestHeader -> AffjaxRequest c Unit
+header header = liftFC (AddHeader header unit)
 
 -- | Sets the content for the request.
 content :: forall c. Content c -> AffjaxRequest c Unit

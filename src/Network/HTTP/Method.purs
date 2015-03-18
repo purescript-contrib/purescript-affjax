@@ -1,4 +1,4 @@
-module Network.Affjax.HTTP where
+module Network.HTTP.Method where
 
 data Method
   = DELETE
@@ -31,20 +31,6 @@ instance showMethod :: Show Method where
   show PUT     = "PUT"
   show (CustomMethod m) = "(CustomMethod " ++ show m ++ ")"
 
-newtype HeaderHead = HeaderHead String
-
-instance eqHeaderHead :: Eq HeaderHead where
-  (==) (HeaderHead x) (HeaderHead y) = x == y
-  (/=) (HeaderHead x) (HeaderHead y) = x /= y
-
-instance showHeaderHead :: Show HeaderHead where
-  show (HeaderHead h) = "(HeaderHead " ++ show h ++ ")"
-
-data Header = Header HeaderHead String
-
-instance eqHeader :: Eq Header where
-  (==) (Header hx x) (Header hy y) = hx == hy && x == y
-  (/=) (Header hx x) (Header hy y) = hx /= hy || x /= y
-
-instance showHeader :: Show Header where
-  show (Header hh h) = "(Header " ++ show hh ++ " " ++ show h ++ ")"
+methodToString :: Method -> String
+methodToString (CustomMethod m) = m
+methodToString other = show other

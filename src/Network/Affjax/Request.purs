@@ -18,7 +18,8 @@ import Data.Nullable (Nullable(), toNullable)
 import DOM (Document())
 import DOM.File (Blob())
 import DOM.XHR (FormData())
-import Network.Affjax.HTTP
+import Network.HTTP.Method
+import Network.HTTP.RequestHeader
 
 -- | The event type for AJAX requests.
 foreign import data Ajax :: !
@@ -27,7 +28,7 @@ foreign import data Ajax :: !
 type AjaxRequest a =
   { url :: String
   , method :: Method
-  , headers :: [Header]
+  , headers :: [RequestHeader]
   , content :: Maybe (Content a)
   , username :: Maybe String
   , password :: Maybe String
@@ -59,15 +60,14 @@ defaultRequest =
 ajax :: forall e a. AjaxRequest a -> Aff (ajax :: Ajax | e) AjaxResponse
 ajax req = makeAff $ runFn8
   unsafeAjax req.url
-             (runMethodName req.method)
+             (methodToString req.method)
              (runHeader <$> req.headers)
              (toNullable $ runContent <$> req.content)
              (toNullable req.username)
              (toNullable req.password)
   where
-  runMethodName (CustomMethod name) = name
-  runMethodName method = show method
-  runHeader (Header header value) = { header: show header, value: value }
+  runHeader :: RequestHeader -> { head :: String, value :: String }
+  runHeader h = { head: requestHeaderName h, value: requestHeaderValue h }
   runContent :: forall c. Content c -> XHRContent
   runContent (ArrayViewContent av) = unsafeToXHRContent av
   runContent (BlobContent b) = unsafeToXHRContent b
@@ -90,7 +90,7 @@ foreign import unsafeAjax
     var xhr = new XMLHttpRequest();
     xhr.open(method, url, true, username, password);
     for (var i = 0, header; header = headers[i]; i++) {
-      xhr.setRequestHeader(header.header, header.value);
+      xhr.setRequestHeader(header.head, header.value);
     }
     xhr.onerror = function (err) {
       errback(err)();
@@ -103,7 +103,7 @@ foreign import unsafeAjax
   }
   """ :: forall e. Fn8 String
                        String
-                       [{ header :: String, value :: String }]
+                       [{ head :: String, value :: String }]
                        (Nullable XHRContent)
                        (Nullable String)
                        (Nullable String)
