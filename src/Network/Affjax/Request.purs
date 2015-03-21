@@ -1,7 +1,7 @@
 module Network.Affjax.Request
   ( Ajax()
+  , AjaxContent()
   , AjaxRequest()
-  , Content(..)
   , AjaxResponse()
   , defaultRequest
   , ajax
@@ -9,44 +9,34 @@ module Network.Affjax.Request
 
 import Control.Monad.Aff (Aff(), EffA(), makeAff)
 import Control.Monad.Eff (Eff())
-import Control.Monad.Eff.Exception(Error())
-import Data.Array ()
-import Data.ArrayBuffer.Types (ArrayView())
+import Control.Monad.Eff.Exception (Error())
 import Data.Function (Fn8(), runFn8)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (Nullable(), toNullable)
-import DOM (Document())
-import DOM.File (Blob())
-import DOM.XHR (FormData())
-import Network.HTTP.Method
-import Network.HTTP.RequestHeader
+import Network.HTTP.Method (Method(..), methodToString)
+import Network.HTTP.RequestHeader (RequestHeader(), requestHeaderName, requestHeaderValue)
 
 -- | The event type for AJAX requests.
 foreign import data Ajax :: !
 
+-- | Type subsuming all content types that can be sent in a request.
+foreign import data AjaxContent :: *
+
 -- | The parameters for an AJAX request.
-type AjaxRequest a =
+type AjaxRequest =
   { url :: String
   , method :: Method
   , headers :: [RequestHeader]
-  , content :: Maybe (Content a)
+  , content :: Maybe AjaxContent
   , username :: Maybe String
   , password :: Maybe String
   }
-
--- | The types of data that can be set in an AJAX request.
-data Content a
-  = ArrayViewContent (ArrayView a)
-  | BlobContent Blob
-  | DocumentContent Document
-  | TextContent String
-  | FormDataContent FormData
 
 -- TODO: probably not this? Do we want to deal with other responses, include headers, etc?
 newtype AjaxResponse = AjaxResponse String
 
 -- | A basic request, `GET /` with no particular headers or credentials.
-defaultRequest :: forall c. AjaxRequest c
+defaultRequest :: AjaxRequest
 defaultRequest =
   { url: "/"
   , method: GET
@@ -57,32 +47,17 @@ defaultRequest =
   }
 
 -- | Make an AJAX request.
-ajax :: forall e a. AjaxRequest a -> Aff (ajax :: Ajax | e) AjaxResponse
+ajax :: forall e. AjaxRequest -> Aff (ajax :: Ajax | e) AjaxResponse
 ajax req = makeAff $ runFn8
   unsafeAjax req.url
              (methodToString req.method)
              (runHeader <$> req.headers)
-             (toNullable $ runContent <$> req.content)
+             (toNullable req.content)
              (toNullable req.username)
              (toNullable req.password)
   where
   runHeader :: RequestHeader -> { head :: String, value :: String }
   runHeader h = { head: requestHeaderName h, value: requestHeaderValue h }
-  runContent :: forall c. Content c -> XHRContent
-  runContent (ArrayViewContent av) = unsafeToXHRContent av
-  runContent (BlobContent b) = unsafeToXHRContent b
-  runContent (DocumentContent d) = unsafeToXHRContent d
-  runContent (TextContent s) = unsafeToXHRContent s
-  runContent (FormDataContent fd) = unsafeToXHRContent fd
-
-foreign import data XHRContent :: *
-
-foreign import unsafeToXHRContent
-  """
-  function unsafeToXHRContent (value) {
-    return value;
-  }
-  """ :: forall a. a -> XHRContent
 
 foreign import unsafeAjax
   """
@@ -104,7 +79,7 @@ foreign import unsafeAjax
   """ :: forall e. Fn8 String
                        String
                        [{ head :: String, value :: String }]
-                       (Nullable XHRContent)
+                       (Nullable AjaxContent)
                        (Nullable String)
                        (Nullable String)
                        (Error -> Eff (ajax :: Ajax | e) Unit)

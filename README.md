@@ -5,7 +5,7 @@
 #### `runAffjax`
 
 ``` purescript
-runAffjax :: forall e c a. AffjaxRequest c a -> Aff (ajax :: Ajax | e) AjaxResponse
+runAffjax :: forall e a. AffjaxRequest a -> Aff (ajax :: Ajax | e) AjaxResponse
 ```
 
 
@@ -15,7 +15,7 @@ runAffjax :: forall e c a. AffjaxRequest c a -> Aff (ajax :: Ajax | e) AjaxRespo
 #### `AffjaxRequest`
 
 ``` purescript
-type AffjaxRequest c = FreeC (AffjaxRequestF c)
+type AffjaxRequest = FreeC AffjaxRequestF
 ```
 
 A free monad for building AJAX requests
@@ -23,11 +23,11 @@ A free monad for building AJAX requests
 #### `AffjaxRequestF`
 
 ``` purescript
-data AffjaxRequestF c a
+data AffjaxRequestF a
   = SetURL String a
-  | SetMethod MethodName a
-  | AddHeader Header a
-  | SetContent (Maybe (Content c)) a
+  | SetMethod Method a
+  | AddHeader RequestHeader a
+  | SetContent (Maybe Content) a
   | SetUsername (Maybe String) a
   | SetPassword (Maybe String) a
 ```
@@ -37,7 +37,7 @@ The request DSL AST.
 #### `affjaxRequest`
 
 ``` purescript
-affjaxRequest :: forall c a. AffjaxRequest c a -> AjaxRequest c
+affjaxRequest :: forall a. AffjaxRequest a -> AjaxRequest
 ```
 
 Runs the DSL, producing an `AjaxRequest` object.
@@ -45,7 +45,7 @@ Runs the DSL, producing an `AjaxRequest` object.
 #### `url`
 
 ``` purescript
-url :: forall c. String -> AffjaxRequest c Unit
+url :: String -> AffjaxRequest Unit
 ```
 
 Sets the URL for a request.
@@ -53,39 +53,23 @@ Sets the URL for a request.
 #### `method`
 
 ``` purescript
-method :: forall c. Verb -> AffjaxRequest c Unit
+method :: Method -> AffjaxRequest Unit
 ```
 
 Sets the request method based on an HTTP verb.
 
-#### `method'`
-
-``` purescript
-method' :: forall c. MethodName -> AffjaxRequest c Unit
-```
-
-Sets the request method.
-
 #### `header`
 
 ``` purescript
-header :: forall c. HeaderHead -> String -> AffjaxRequest c Unit
+header :: RequestHeader -> AffjaxRequest Unit
 ```
 
-Adds a header to the request using a key and value.
-
-#### `header'`
-
-``` purescript
-header' :: forall c. Header -> AffjaxRequest c Unit
-```
-
-Adds a header to the request using a `Header` record.
+Adds a header to the request.
 
 #### `content`
 
 ``` purescript
-content :: forall c. Content c -> AffjaxRequest c Unit
+content :: Content -> AffjaxRequest Unit
 ```
 
 Sets the content for the request.
@@ -93,7 +77,7 @@ Sets the content for the request.
 #### `content'`
 
 ``` purescript
-content' :: forall c. Maybe (Content c) -> AffjaxRequest c Unit
+content' :: Maybe Content -> AffjaxRequest Unit
 ```
 
 Sets the content for the request, with the option of setting it to
@@ -102,7 +86,7 @@ Sets the content for the request, with the option of setting it to
 #### `username`
 
 ``` purescript
-username :: forall c. String -> AffjaxRequest c Unit
+username :: String -> AffjaxRequest Unit
 ```
 
 Sets the username for the request.
@@ -110,7 +94,7 @@ Sets the username for the request.
 #### `username'`
 
 ``` purescript
-username' :: forall c. Maybe String -> AffjaxRequest c Unit
+username' :: Maybe String -> AffjaxRequest Unit
 ```
 
 Sets the username for the request, with the option of setting it to
@@ -119,7 +103,7 @@ Sets the username for the request, with the option of setting it to
 #### `password`
 
 ``` purescript
-password :: forall c. String -> AffjaxRequest c Unit
+password :: String -> AffjaxRequest Unit
 ```
 
 Sets the password for the request.
@@ -127,7 +111,7 @@ Sets the password for the request.
 #### `password'`
 
 ``` purescript
-password' :: forall c. Maybe String -> AffjaxRequest c Unit
+password' :: Maybe String -> AffjaxRequest Unit
 ```
 
 Sets the password for the request, with the option of setting it to
@@ -147,30 +131,23 @@ The event type for AJAX requests.
 #### `AjaxRequest`
 
 ``` purescript
-type AjaxRequest a = { password :: Maybe String, username :: Maybe String, content :: Maybe (Content a), headers :: [Header], method :: MethodName, url :: String }
+type AjaxRequest = { password :: Maybe String, username :: Maybe String, content :: Maybe Content, headers :: [RequestHeader], method :: Method, url :: String }
 ```
 
 The parameters for an AJAX request.
 
-#### `MethodName`
-
-``` purescript
-newtype MethodName
-  = MethodName String
-```
-
-A HTTP method name: `GET`, `POST`, etc.
-
 #### `Content`
 
 ``` purescript
-data Content a
-  = ArrayViewContent (ArrayView a)
+data Content
+  = ArrayViewContent (Exists ArrayView)
   | BlobContent Blob
   | DocumentContent Document
   | TextContent String
   | FormDataContent FormData
 ```
+
+The types of data that can be set in an AJAX request.
 
 #### `AjaxResponse`
 
@@ -181,7 +158,7 @@ newtype AjaxResponse
 #### `defaultRequest`
 
 ``` purescript
-defaultRequest :: forall c. AjaxRequest c
+defaultRequest :: AjaxRequest
 ```
 
 A basic request, `GET /` with no particular headers or credentials.
@@ -189,10 +166,273 @@ A basic request, `GET /` with no particular headers or credentials.
 #### `ajax`
 
 ``` purescript
-ajax :: forall e a. AjaxRequest a -> Aff (ajax :: Ajax | e) AjaxResponse
+ajax :: forall e. AjaxRequest -> Aff (ajax :: Ajax | e) AjaxResponse
 ```
 
 Make an AJAX request.
+
+
+## Module Network.HTTP.Method
+
+#### `Method`
+
+``` purescript
+data Method
+  = DELETE 
+  | GET 
+  | HEAD 
+  | OPTIONS 
+  | PATCH 
+  | POST 
+  | PUT 
+  | CustomMethod String
+```
+
+
+#### `eqMethod`
+
+``` purescript
+instance eqMethod :: Eq Method
+```
+
+
+#### `showMethod`
+
+``` purescript
+instance showMethod :: Show Method
+```
+
+
+#### `methodToString`
+
+``` purescript
+methodToString :: Method -> String
+```
+
+
+
+## Module Network.HTTP.MimeType
+
+#### `MimeType`
+
+``` purescript
+newtype MimeType
+  = MimeType String
+```
+
+
+#### `eqMimeType`
+
+``` purescript
+instance eqMimeType :: Eq MimeType
+```
+
+
+#### `showMimeType`
+
+``` purescript
+instance showMimeType :: Show MimeType
+```
+
+
+#### `mimeTypeToString`
+
+``` purescript
+mimeTypeToString :: MimeType -> String
+```
+
+
+
+## Module Network.HTTP.RequestHeader
+
+#### `RequestHeader`
+
+``` purescript
+data RequestHeader
+  = Accept MimeType
+  | ContentType MimeType
+  | RequestHeader String String
+```
+
+
+#### `eqRequestHeader`
+
+``` purescript
+instance eqRequestHeader :: Eq RequestHeader
+```
+
+
+#### `showRequestHeader`
+
+``` purescript
+instance showRequestHeader :: Show RequestHeader
+```
+
+
+#### `requestHeaderName`
+
+``` purescript
+requestHeaderName :: RequestHeader -> String
+```
+
+
+#### `requestHeaderValue`
+
+``` purescript
+requestHeaderValue :: RequestHeader -> String
+```
+
+
+
+## Module Network.HTTP.ResponseHeader
+
+#### `ResponseHeader`
+
+``` purescript
+data ResponseHeader
+  = ResponseHeader String String
+```
+
+
+#### `eqResponseHeader`
+
+``` purescript
+instance eqResponseHeader :: Eq ResponseHeader
+```
+
+
+#### `showResponseHeader`
+
+``` purescript
+instance showResponseHeader :: Show ResponseHeader
+```
+
+
+#### `responseHeaderName`
+
+``` purescript
+responseHeaderName :: ResponseHeader -> String
+```
+
+
+#### `responseHeaderValue`
+
+``` purescript
+responseHeaderValue :: ResponseHeader -> String
+```
+
+
+
+## Module Network.HTTP.StatusCode
+
+#### `StatusCode`
+
+``` purescript
+newtype StatusCode
+  = StatusCode Int
+```
+
+
+#### `eqStatusCode`
+
+``` purescript
+instance eqStatusCode :: Eq StatusCode
+```
+
+
+#### `showStatusCode`
+
+``` purescript
+instance showStatusCode :: Show StatusCode
+```
+
+
+
+## Module Network.HTTP.MimeType.Common
+
+#### `applicationFormURLEncoded`
+
+``` purescript
+applicationFormURLEncoded :: MimeType
+```
+
+
+#### `applicationJSON`
+
+``` purescript
+applicationJSON :: MimeType
+```
+
+
+#### `applicationJavascript`
+
+``` purescript
+applicationJavascript :: MimeType
+```
+
+
+#### `applicationOctetStream`
+
+``` purescript
+applicationOctetStream :: MimeType
+```
+
+
+#### `applicationXML`
+
+``` purescript
+applicationXML :: MimeType
+```
+
+
+#### `imageGIF`
+
+``` purescript
+imageGIF :: MimeType
+```
+
+
+#### `imageJPEG`
+
+``` purescript
+imageJPEG :: MimeType
+```
+
+
+#### `imagePNG`
+
+``` purescript
+imagePNG :: MimeType
+```
+
+
+#### `multipartFormData`
+
+``` purescript
+multipartFormData :: MimeType
+```
+
+
+#### `textCSV`
+
+``` purescript
+textCSV :: MimeType
+```
+
+
+#### `textPlain`
+
+``` purescript
+textPlain :: MimeType
+```
+
+
+#### `textXML`
+
+``` purescript
+textXML :: MimeType
+```
+
 
 
 

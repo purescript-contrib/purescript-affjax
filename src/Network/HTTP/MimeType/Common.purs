@@ -30,7 +30,10 @@ multipartFormData :: MimeType
 multipartFormData = MimeType "multipart/form-data"
 
 textCSV :: MimeType
-textCSV = MimeType "text/CSV"
+textCSV = MimeType "text/csv"
+
+textHTML :: MimeType
+textHTML = MimeType "text/html"
 
 textPlain :: MimeType
 textPlain = MimeType "text/plain"
