@@ -62,19 +62,21 @@ ajax req = makeAff $ runFn8
 foreign import unsafeAjax
   """
   function unsafeAjax (url, method, headers, content, username, password, errback, callback) {
-    var xhr = new XMLHttpRequest();
-    xhr.open(method, url, true, username, password);
-    for (var i = 0, header; header = headers[i]; i++) {
-      xhr.setRequestHeader(header.head, header.value);
-    }
-    xhr.onerror = function (err) {
-      errback(err)();
+    return function () {
+      var xhr = new XMLHttpRequest();
+      xhr.open(method, url, true, username, password);
+      for (var i = 0, header; header = headers[i]; i++) {
+        xhr.setRequestHeader(header.head, header.value);
+      }
+      xhr.onerror = function (err) {
+        errback(err)();
+      };
+      xhr.onload = function () {
+        if (xhr.status === 200) callback(xhr.response)();
+        else errback(new Error("Request returned status " + xhr.status))();
+      };
+      xhr.send(content);
     };
-    xhr.onload = function () {
-      if (xhr.status === 200) callback(xhr.response)();
-      else errback(new Error("Request returned status " + xhr.status))();
-    };
-    xhr.send(content);
   }
   """ :: forall e. Fn8 String
                        String
