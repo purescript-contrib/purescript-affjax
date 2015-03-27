@@ -31,5 +31,4 @@ gulp.task("docs", function () {
     .pipe(gulp.dest("README.md"));
 });
 
-// gulp.task("default", ["jsvalidate", "docs"]);
-gulp.task("default", ["make-test"]);
+gulp.task("default", ["jsvalidate", "docs", "make-test"]);
