@@ -10,6 +10,8 @@ data Method
   | PATCH
   | POST
   | PUT
+  | MOVE
+  | COPY
   | CustomMethod String
 
 instance eqMethod :: Eq Method where
@@ -20,6 +22,8 @@ instance eqMethod :: Eq Method where
   (==) PATCH   PATCH   = true
   (==) POST    POST    = true
   (==) PUT     PUT     = true
+  (==) MOVE    MOVE    = true
+  (==) COPY    COPY     = true
   (==) _       _       = false
   (/=) x y = not (x == y)
 
@@ -31,6 +35,8 @@ instance showMethod :: Show Method where
   show PATCH   = "PATCH"
   show POST    = "POST"
   show PUT     = "PUT"
+  show MOVE    = "MOVE"
+  show COPY    = "COPY"
   show (CustomMethod m) = "(CustomMethod " ++ show m ++ ")"
 
 instance isOptionMethod :: IsOption Method where

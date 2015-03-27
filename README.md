@@ -169,6 +169,8 @@ data Method
   | PATCH 
   | POST 
   | PUT 
+  | MOVE 
+  | COPY 
   | CustomMethod String
 ```
 
