@@ -3,11 +3,10 @@ module Network.HTTP.Affjax.Request
   , Requestable, toContent
   ) where
 
-import Data.Options (Option(), Options(), IsOption, optionFn, (:=))
+import Data.Options (Option(), Options(), IsOption, (:=))
 import DOM (Document())
 import DOM.File (Blob())
 import DOM.XHR (FormData())
-import Network.HTTP.MimeType (MimeType())
 import qualified Data.ArrayBuffer.Types as A
 
 -- | Type representing all content types that be sent via XHR (ArrayBufferView,

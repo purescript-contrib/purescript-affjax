@@ -18,7 +18,7 @@ import Control.Monad.Eff.Exception (Error(), error)
 import Data.Either (Either(..))
 import Data.Foreign (Foreign(..), F())
 import Data.Function (Fn4(), runFn4)
-import Data.Options (Option(), Options(), IsOption, options, (:=), opt)
+import Data.Options (Option(), Options(), options, (:=), opt)
 import Network.HTTP.Affjax.Request
 import Network.HTTP.Affjax.Response
 import Network.HTTP.Affjax.ResponseType
