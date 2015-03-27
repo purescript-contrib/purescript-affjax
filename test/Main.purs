@@ -42,7 +42,7 @@ main = do
     liftEff $ either traceAny traceAny res
 
   launchAff $ do
-    res <- attempt $ get rInt8Array "/arrayview"
+    res <- attempt $ get "/arrayview" rInt8Array
     liftEff $ either traceAny traceAny res
 
 go :: forall e. Options AffjaxOptions -> Eff (ajax :: Ajax, trace :: Trace | e) Unit

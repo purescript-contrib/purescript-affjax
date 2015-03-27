@@ -3,6 +3,7 @@ module Network.HTTP.Affjax
   , Affjax()
   , AffjaxOptions()
   , AffjaxResponse()
+  , URL()
   , url, method, content, headers, username, password
   , affjax
   , affjax'
@@ -43,8 +44,11 @@ type AffjaxResponse a =
   , response :: a
   }
 
+-- | Type alias for URL strings to aid readability of types.
+type URL = String
+
 -- | Sets the URL for a request.
-url :: Option AffjaxOptions String
+url :: Option AffjaxOptions URL
 url = opt "url"
 
 -- | Sets the HTTP method for a request.
@@ -92,32 +96,32 @@ affjax' (Responsable read ty) opts eb cb =
     Left err -> eb $ error (show err)
     Right res' -> cb res'
 
-get :: forall e a. Responsable a -> String -> Affjax e a
-get r addr = affjax r $ method := GET
-                     <> url := addr
+get :: forall e a. URL -> Responsable a -> Affjax e a
+get u r = affjax r $ method := GET
+                  <> url := u
 
-post :: forall e a. Responsable a -> String -> RequestContent -> Affjax e a
-post r u c = affjax r $ method := POST
+post :: forall e a. URL -> Responsable a -> RequestContent -> Affjax e a
+post u r c = affjax r $ method := POST
                      <> url := u
                      <> content := c
 
-post_ :: forall e. String -> RequestContent -> Affjax e Unit
-post_ = post rUnit
+post_ :: forall e. URL -> RequestContent -> Affjax e Unit
+post_ = flip post rUnit
 
-put :: forall e a. Responsable a -> String -> RequestContent -> Affjax e a
-put r u c = affjax r $ method := PUT
+put :: forall e a. URL -> Responsable a -> RequestContent -> Affjax e a
+put u r c = affjax r $ method := PUT
                     <> url := u
                     <> content := c
 
-put_ :: forall e. String -> RequestContent -> Affjax e Unit
-put_ = put rUnit
+put_ :: forall e. URL -> RequestContent -> Affjax e Unit
+put_ = flip put rUnit
 
-delete :: forall e a. Responsable a -> String -> Affjax e a
-delete r u = affjax r $ method := DELETE
+delete :: forall e a. URL -> Responsable a -> Affjax e a
+delete u r = affjax r $ method := DELETE
                      <> url := u
 
-delete_ :: forall e. String -> Affjax e Unit
-delete_ = delete rUnit
+delete_ :: forall e. URL -> Affjax e Unit
+delete_ = flip delete rUnit
 
 foreign import unsafeAjax
   """

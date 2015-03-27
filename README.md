@@ -34,10 +34,18 @@ type AffjaxResponse a = { response :: a, headers :: [ResponseHeader], status :: 
 
 The type of records that will be received as an Affjax response.
 
+#### `URL`
+
+``` purescript
+type URL = String
+```
+
+Type alias for URL strings to aid readability of types.
+
 #### `url`
 
 ``` purescript
-url :: Option AffjaxOptions String
+url :: Option AffjaxOptions URL
 ```
 
 Sets the URL for a request.
@@ -101,49 +109,49 @@ Runs a request directly in Eff.
 #### `get`
 
 ``` purescript
-get :: forall e a. Responsable a -> String -> Affjax e a
+get :: forall e a. URL -> Responsable a -> Affjax e a
 ```
 
 
 #### `post`
 
 ``` purescript
-post :: forall e a. Responsable a -> String -> RequestContent -> Affjax e a
+post :: forall e a. URL -> Responsable a -> RequestContent -> Affjax e a
 ```
 
 
 #### `post_`
 
 ``` purescript
-post_ :: forall e. String -> RequestContent -> Affjax e Unit
+post_ :: forall e. URL -> RequestContent -> Affjax e Unit
 ```
 
 
 #### `put`
 
 ``` purescript
-put :: forall e a. Responsable a -> String -> RequestContent -> Affjax e a
+put :: forall e a. URL -> Responsable a -> RequestContent -> Affjax e a
 ```
 
 
 #### `put_`
 
 ``` purescript
-put_ :: forall e. String -> RequestContent -> Affjax e Unit
+put_ :: forall e. URL -> RequestContent -> Affjax e Unit
 ```
 
 
 #### `delete`
 
 ``` purescript
-delete :: forall e a. Responsable a -> String -> Affjax e a
+delete :: forall e a. URL -> Responsable a -> Affjax e a
 ```
 
 
 #### `delete_`
 
 ``` purescript
-delete_ :: forall e. String -> Affjax e Unit
+delete_ :: forall e. URL -> Affjax e Unit
 ```
 
 
