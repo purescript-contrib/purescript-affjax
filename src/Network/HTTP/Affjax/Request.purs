@@ -22,7 +22,7 @@ instance isOptionRequestContent :: IsOption RequestContent where
 class Requestable a where
   toContent :: a -> RequestContent
 
-instance requestableAjaxRequestContent :: Requestable RequestContent where
+instance requestableRequestContent :: Requestable RequestContent where
   toContent = id
 
 instance requestableInt8Array :: Requestable (A.ArrayView A.Int8) where

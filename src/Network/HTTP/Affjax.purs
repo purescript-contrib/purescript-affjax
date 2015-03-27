@@ -1,23 +1,28 @@
 module Network.HTTP.Affjax
   ( Ajax()
+  , Affjax()
   , AffjaxOptions()
   , AffjaxResponse()
   , url, method, content, headers, username, password
   , affjax
   , affjax'
+  , get
+  , post, post_
+  , put, put_
+  , delete, delete_
   ) where
 
 import Control.Monad.Aff (Aff(), makeAff)
 import Control.Monad.Eff (Eff())
-import Control.Monad.Eff.Exception (Error())
-import Data.Foreign (Foreign(..))
+import Control.Monad.Eff.Exception (Error(), error)
+import Data.Either (Either(..))
+import Data.Foreign (Foreign(..), F())
 import Data.Function (Fn4(), runFn4)
 import Data.Options (Option(), Options(), IsOption, options, (:=), opt)
-import Data.Proxy (Proxy(..))
 import Network.HTTP.Affjax.Request
 import Network.HTTP.Affjax.Response
 import Network.HTTP.Affjax.ResponseType
-import Network.HTTP.Method (Method())
+import Network.HTTP.Method (Method(..))
 import Network.HTTP.RequestHeader (RequestHeader())
 import Network.HTTP.ResponseHeader (ResponseHeader(), responseHeader)
 import Network.HTTP.StatusCode (StatusCode())
@@ -25,8 +30,11 @@ import Network.HTTP.StatusCode (StatusCode())
 -- | The effect type for AJAX requests made with Affjax.
 foreign import data Ajax :: !
 
+-- | The type for Affjax requests.
+type Affjax e a = Aff (ajax :: Ajax | e) (AffjaxResponse a)
+
 -- | Options type for Affjax requests.
-foreign import data AffjaxOptions :: * -> *
+foreign import data AffjaxOptions :: *
 
 -- | The type of records that will be received as an Affjax response.
 type AffjaxResponse a =
@@ -36,49 +44,80 @@ type AffjaxResponse a =
   }
 
 -- | Sets the URL for a request.
-url :: forall a. Option (AffjaxOptions a) String
+url :: Option AffjaxOptions String
 url = opt "url"
 
 -- | Sets the HTTP method for a request.
-method :: forall a. Option (AffjaxOptions a) Method
+method :: Option AffjaxOptions Method
 method = opt "method"
 
 -- | Sets the content to send in a request.
-content :: forall a. (Requestable a, IsOption a) => Option (AffjaxOptions a) a
+content :: Option AffjaxOptions RequestContent
 content = opt "content"
 
 -- | Sets the headers to send with a request.
-headers :: forall a. Option (AffjaxOptions a) [RequestHeader]
+headers :: Option AffjaxOptions [RequestHeader]
 headers = opt "headers"
 
 -- | Sets the HTTP auth username to send with a request.
-username :: forall a. Option (AffjaxOptions a) String
+username :: Option AffjaxOptions String
 username = opt "username"
 
 -- | Sets the HTTP auth password to send with a request.
-password :: forall a. Option (AffjaxOptions a) String
+password :: Option AffjaxOptions String
 password = opt "password"
 
 -- | Sets the expected response type for a request. This is not exposed outside
 -- | of the module as the `ResponseType` is set based on the `Responsable`
 -- | instance for the expected result content type.
-responseType = opt "responseType" :: forall a. Option (AffjaxOptions a) ResponseType
+responseType = opt "responseType" :: Option AffjaxOptions ResponseType
 
 -- | Runs a request.
-affjax :: forall e a b. (Requestable a, Responsable b) =>
-                        Options (AffjaxOptions a) ->
-                        Aff (ajax :: Ajax | e) (AffjaxResponse b)
-affjax = makeAff <<< affjax'
+affjax :: forall e a. Responsable a ->
+                      Options AffjaxOptions ->
+                      Affjax e a
+affjax r = makeAff <<< affjax' r
 
 -- | Runs a request directly in Eff.
-affjax' :: forall e a b. (Requestable a, Responsable b) =>
-                         Options (AffjaxOptions a) ->
-                         (Error -> Eff (ajax :: Ajax | e) Unit) ->
-                         (AffjaxResponse b -> Eff (ajax :: Ajax | e) Unit) ->
-                         Eff (ajax :: Ajax | e) Unit
-affjax' opts eb cb =
-  let opts' = opts <> responseType := toResponseType (Proxy :: Proxy b)
-  in runFn4 unsafeAjax responseHeader (options opts') eb cb
+affjax' :: forall e a. Responsable a ->
+                       Options AffjaxOptions ->
+                       (Error -> Eff (ajax :: Ajax | e) Unit) ->
+                       (AffjaxResponse a -> Eff (ajax :: Ajax | e) Unit) ->
+                       Eff (ajax :: Ajax | e) Unit
+affjax' (Responsable read ty) opts eb cb =
+  runFn4 unsafeAjax responseHeader (options $ opts <> responseType := ty) eb cb'
+  where
+  cb' :: AffjaxResponse Foreign -> Eff (ajax :: Ajax | e) Unit
+  cb' res = case res { response = _  } <$> read res.response of
+    Left err -> eb $ error (show err)
+    Right res' -> cb res'
+
+get :: forall e a. Responsable a -> String -> Affjax e a
+get r addr = affjax r $ method := GET
+                     <> url := addr
+
+post :: forall e a. Responsable a -> String -> RequestContent -> Affjax e a
+post r u c = affjax r $ method := POST
+                     <> url := u
+                     <> content := c
+
+post_ :: forall e. String -> RequestContent -> Affjax e Unit
+post_ = post rUnit
+
+put :: forall e a. Responsable a -> String -> RequestContent -> Affjax e a
+put r u c = affjax r $ method := PUT
+                    <> url := u
+                    <> content := c
+
+put_ :: forall e. String -> RequestContent -> Affjax e Unit
+put_ = put rUnit
+
+delete :: forall e a. Responsable a -> String -> Affjax e a
+delete r u = affjax r $ method := DELETE
+                     <> url := u
+
+delete_ :: forall e. String -> Affjax e Unit
+delete_ = delete rUnit
 
 foreign import unsafeAjax
   """
@@ -112,8 +151,8 @@ foreign import unsafeAjax
       xhr.send(options.content);
     };
   }
-  """ :: forall e a b. Fn4 (String -> String -> ResponseHeader)
-                       Foreign
-                       (Error -> Eff (ajax :: Ajax | e) Unit)
-                       (AffjaxResponse b -> Eff (ajax :: Ajax | e) Unit)
-                       (Eff (ajax :: Ajax | e) Unit)
+  """ :: forall e a. Fn4 (String -> String -> ResponseHeader)
+                     Foreign
+                     (Error -> Eff (ajax :: Ajax | e) Unit)
+                     (AffjaxResponse Foreign -> Eff (ajax :: Ajax | e) Unit)
+                     (Eff (ajax :: Ajax | e) Unit)

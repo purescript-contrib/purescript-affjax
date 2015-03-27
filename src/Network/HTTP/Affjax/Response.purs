@@ -1,12 +1,24 @@
 module Network.HTTP.Affjax.Response
   ( ResponseContent()
-  , Responsable, toResponseType, fromContent
+  , Responsable(..)
+  , rInt8Array
+  , rInt16Array
+  , rInt32Array
+  , rUint8Array
+  , rUint16Array
+  , rUint32Array
+  , rUint8ClampedArray
+  , rFloat32Array
+  , rFloat64Array
+  , rBlob
+  , rDocument
+  , rJSON
+  , rString
+  , rUnit
   ) where
 
 import Data.Either (Either(..))
-import Data.Foreign (Foreign(), ForeignError())
-import Data.Options (IsOption, optionFn, (:=))
-import Data.Proxy (Proxy())
+import Data.Foreign (Foreign(), F(), readString, unsafeReadTagged)
 import DOM (Document())
 import DOM.File (Blob())
 import DOM.XHR (FormData())
@@ -17,75 +29,46 @@ import qualified Data.ArrayBuffer.Types as A
 -- | (ArrayBuffer, Blob, Document, JSON, String).
 type ResponseContent = Foreign
 
--- | Class for types that converted from values returned from an XHR request.
-class Responsable a where
-  toResponseType :: Proxy a -> ResponseType
-  fromContent :: ResponseContent -> Either ForeignError a
+data Responsable a = Responsable (ResponseContent -> F a) ResponseType
 
-instance responsableUnit :: Responsable Unit where
-  toResponseType _ = StringResponse
-  fromContent _ = Right unit
+rInt8Array :: Responsable A.Int8Array
+rInt8Array = Responsable (unsafeReadTagged "ArrayBuffer") ArrayBufferResponse
 
-instance responsableInt8Array :: Responsable (A.ArrayView A.Int8) where
-  toResponseType _ = ArrayBufferResponse
-  fromContent = arrayBufferConversion
+rInt16Array :: Responsable A.Int16Array
+rInt16Array = Responsable (unsafeReadTagged "ArrayBuffer") ArrayBufferResponse
 
-instance responsableInt16Array :: Responsable (A.ArrayView A.Int16) where
-  toResponseType _ = ArrayBufferResponse
-  fromContent = arrayBufferConversion
+rInt32Array :: Responsable A.Int32Array
+rInt32Array = Responsable (unsafeReadTagged "ArrayBuffer") ArrayBufferResponse
 
-instance responsableInt32Array :: Responsable (A.ArrayView A.Int32) where
-  toResponseType _ = ArrayBufferResponse
-  fromContent = arrayBufferConversion
+rUint8Array :: Responsable A.Uint8Array
+rUint8Array = Responsable (unsafeReadTagged "ArrayBuffer") ArrayBufferResponse
 
-instance responsableUint8Array :: Responsable (A.ArrayView A.Uint8) where
-  toResponseType _ = ArrayBufferResponse
-  fromContent = arrayBufferConversion
+rUint16Array :: Responsable A.Uint16Array
+rUint16Array = Responsable (unsafeReadTagged "ArrayBuffer") ArrayBufferResponse
 
-instance responsableUint16Array :: Responsable (A.ArrayView A.Uint16) where
-  toResponseType _ = ArrayBufferResponse
-  fromContent = arrayBufferConversion
+rUint32Array :: Responsable A.Uint32Array
+rUint32Array = Responsable (unsafeReadTagged "ArrayBuffer") ArrayBufferResponse
 
-instance responsableUint32Array :: Responsable (A.ArrayView A.Uint32) where
-  toResponseType _ = ArrayBufferResponse
-  fromContent = arrayBufferConversion
+rUint8ClampedArray :: Responsable A.Uint8ClampedArray
+rUint8ClampedArray = Responsable (unsafeReadTagged "ArrayBuffer") ArrayBufferResponse
 
-instance responsableUint8ClampedArray :: Responsable (A.ArrayView A.Uint8Clamped) where
-  toResponseType _ = ArrayBufferResponse
-  fromContent = arrayBufferConversion
+rFloat32Array :: Responsable A.Float32Array
+rFloat32Array = Responsable (unsafeReadTagged "ArrayBuffer") ArrayBufferResponse
 
-instance responsableFloat32Array :: Responsable (A.ArrayView A.Float32) where
-  toResponseType _ = ArrayBufferResponse
-  fromContent = arrayBufferConversion
+rFloat64Array :: Responsable A.Float64Array
+rFloat64Array = Responsable (unsafeReadTagged "ArrayBuffer") ArrayBufferResponse
 
-instance responsableFloat64Array :: Responsable (A.ArrayView A.Float64) where
-  toResponseType _ = ArrayBufferResponse
-  fromContent = arrayBufferConversion
+rBlob :: Responsable Blob
+rBlob = Responsable (unsafeReadTagged "Blob") BlobResponse
 
-instance responsableBlob :: Responsable Blob where
-  toResponseType _ = BlobResponse
-  fromContent = unsafeConversion
+rDocument :: Responsable Document
+rDocument = Responsable (unsafeReadTagged "Document") DocumentResponse
 
-instance responsableDocument :: Responsable Document where
-  toResponseType _ = DocumentResponse
-  fromContent = unsafeConversion
+rJSON :: Responsable Foreign
+rJSON = Responsable Right JSONResponse
 
-instance responsableString :: Responsable String where
-  toResponseType _ = StringResponse
-  fromContent = Right <<< unsafeConversion
+rString :: Responsable String
+rString = Responsable readString StringResponse
 
--- TODO: this, properly
-foreign import arrayBufferConversion
-  """
-  function arrayBufferConversion (x) {
-    return x;
-  }
-  """ :: forall a b. a -> b
-
--- TODO: not this either, at least use foreign to check the tag of returned values to ensure they are not null, etc.
-foreign import unsafeConversion
-  """
-  function unsafeConversion (x) {
-    return x;
-  }
-  """ :: forall a b. a -> b
+rUnit :: Responsable Unit
+rUnit = Responsable (const $ Right unit) StringResponse

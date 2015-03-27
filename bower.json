@@ -22,8 +22,8 @@
     "purescript-aff": "~0.7.0",
     "purescript-arraybuffer-types": "~0.1.1",
     "purescript-dom": "~0.1.2",
-    "purescript-foreign": "~0.4.1",
+    "purescript-foreign": "~0.4.2",
     "purescript-integers": "~0.0.1",
-    "purescript-options": "~0.2.1"
+    "purescript-options": "~0.3.0"
   }
 }

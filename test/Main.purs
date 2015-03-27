@@ -25,32 +25,25 @@ foreign import traceAny
   }
   """ :: forall e a. a -> Eff (trace :: Trace | e) Unit
 
-traceAny' :: forall e. AffjaxResponse Unit -> Eff (trace :: Trace | e) Unit
-traceAny' = traceAny
-
 foreign import noContent "var noContent = new FormData();" :: RequestContent
-
--- TODO: make PR for options
-instance isOptionUnit :: IsOption Unit where
-  (:=) k a = (optionFn k) := toContent a
 
 main = do
 
   go $ url := "/api"
      <> headers := [ContentType applicationOctetStream]
-     <> content := noContent
+     <> content := (toContent "test")
 
   go $ url := "/api"
      <> method := POST
-     <> content := unit
+     <> content := (toContent unit)
 
   launchAff $ do
-    res <- attempt $ affjax $ url := "/api"
-                           <> method := POST
-                           <> content := unit
-    liftEff $ case res of
-      (Left err) -> traceAny err
-      (Right res') -> traceAny (res' :: AffjaxResponse String)
+    res <- attempt $ affjax rString $ url := "/api" <> method := POST
+    liftEff $ either traceAny traceAny res
 
-go :: forall e a. (Requestable a) => Options (AffjaxOptions a) -> Eff (ajax :: Ajax, trace :: Trace | e) Unit
-go opts = affjax' opts traceAny traceAny'
+  launchAff $ do
+    res <- attempt $ get rInt8Array "/arrayview"
+    liftEff $ either traceAny traceAny res
+
+go :: forall e. Options AffjaxOptions -> Eff (ajax :: Ajax, trace :: Trace | e) Unit
+go opts = affjax' rUnit opts traceAny traceAny
