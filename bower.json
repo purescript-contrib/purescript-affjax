@@ -6,7 +6,7 @@
     "purescript",
     "ajax"
   ],
-  "license": "MIT",
+  "license": "Apache 2.0",
   "ignore": [
     "**/.*",
     "bower_components",
