@@ -15,10 +15,10 @@ module Network.HTTP.Affjax
 import Control.Monad.Aff (Aff(), makeAff)
 import Control.Monad.Eff (Eff())
 import Control.Monad.Eff.Exception (Error(), error)
-import Data.Maybe (Maybe(..))
 import Data.Either (Either(..))
 import Data.Foreign (Foreign(..), F())
 import Data.Function (Fn4(), runFn4)
+import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (Nullable(), toNullable)
 import Network.HTTP.Affjax.Request
 import Network.HTTP.Affjax.Response
@@ -27,6 +27,7 @@ import Network.HTTP.Method (Method(..), methodToString)
 import Network.HTTP.RequestHeader (RequestHeader(), requestHeaderName, requestHeaderValue)
 import Network.HTTP.ResponseHeader (ResponseHeader(), responseHeader)
 import Network.HTTP.StatusCode (StatusCode())
+import Type.Proxy (Proxy(..))
 
 -- | The effect type for AJAX requests made with Affjax.
 foreign import data Ajax :: !
@@ -102,6 +103,7 @@ affjax' req eb cb =
          , url: req.url
          , headers: (\h -> { field: requestHeaderName h, value: requestHeaderValue h }) <$> req.headers
          , content: toNullable (toRequest <$> req.content)
+         , responseType: responseTypeToString $ responseType (Proxy :: Proxy b)
          , username: toNullable req.username
          , password: toNullable req.password
          }
@@ -115,6 +117,7 @@ type AjaxRequest =
   , url :: URL
   , headers :: [{ field :: String, value :: String }]
   , content :: Nullable RequestContent
+  , responseType :: String
   , username :: Nullable String
   , password :: Nullable String
   }
@@ -147,7 +150,7 @@ foreign import unsafeAjax
           response: xhr.response
         })();
       };
-      if (options.responseType) xhr.responseType = options.responseType;
+      xhr.responseType = options.responseType;
       xhr.send(options.content);
     };
   }

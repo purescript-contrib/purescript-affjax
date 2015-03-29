@@ -58,7 +58,7 @@ instance responsableDocument :: Responsable Document where
 
 instance responsableJSON :: Responsable Foreign where
   responseType _ = JSONResponse
-  fromResponse = readString >=> parseJSON
+  fromResponse = Right
 
 instance responsableString :: Responsable String where
   responseType _ = StringResponse

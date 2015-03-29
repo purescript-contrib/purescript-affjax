@@ -25,9 +25,9 @@ instance showResponseType :: Show ResponseType where
   show JSONResponse = "JSONResponse"
   show StringResponse = "StringResponse"
 
-ajaxResponseTypeToString :: ResponseType -> String
-ajaxResponseTypeToString ArrayBufferResponse = "arraybuffer"
-ajaxResponseTypeToString BlobResponse = "blob"
-ajaxResponseTypeToString DocumentResponse = "document"
-ajaxResponseTypeToString JSONResponse = "json"
-ajaxResponseTypeToString StringResponse = "text"
+responseTypeToString :: ResponseType -> String
+responseTypeToString ArrayBufferResponse = "arraybuffer"
+responseTypeToString BlobResponse = "blob"
+responseTypeToString DocumentResponse = "document"
+responseTypeToString JSONResponse = "json"
+responseTypeToString StringResponse = "text"

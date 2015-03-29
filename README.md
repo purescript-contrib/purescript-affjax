@@ -507,10 +507,10 @@ instance showResponseType :: Show ResponseType
 ```
 
 
-#### `ajaxResponseTypeToString`
+#### `responseTypeToString`
 
 ``` purescript
-ajaxResponseTypeToString :: ResponseType -> String
+responseTypeToString :: ResponseType -> String
 ```
 
 
