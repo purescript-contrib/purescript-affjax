@@ -7,8 +7,8 @@ module Network.HTTP.Affjax
   , affjax
   , affjax'
   , get
-  , post, post_
-  , put, put_
+  , post, post_, post', post_'
+  , put, put_, put', put_'
   , delete, delete_
   ) where
 
@@ -68,24 +68,51 @@ type URL = String
 affjax :: forall e a b. (Requestable a, Responsable b) => AffjaxRequest a -> Affjax e b
 affjax = makeAff <<< affjax'
 
+-- | Makes a `GET` request to the specified URL.
 get :: forall e a. (Responsable a) => URL -> Affjax e a
 get u = affjax $ defaultRequest { url = u }
 
+-- | Makes a `POST` request to the specified URL, sending data.
 post :: forall e a b. (Requestable a, Responsable b) => URL -> a -> Affjax e b
 post u c = affjax $ defaultRequest { method = POST, url = u, content = Just c }
 
+-- | Makes a `POST` request to the specified URL with the option to send data.
+post' :: forall e a b. (Requestable a, Responsable b) => URL -> Maybe a -> Affjax e b
+post' u c = affjax $ defaultRequest { method = POST, url = u, content = c }
+
+-- | Makes a `POST` request to the specified URL, sending data and ignoring the
+-- | response.
 post_ :: forall e a. (Requestable a) => URL -> a -> Affjax e Unit
 post_ = post
 
+-- | Makes a `POST` request to the specified URL with the option to send data,
+-- | and ignores the response.
+post_' :: forall e a. (Requestable a) => URL -> Maybe a -> Affjax e Unit
+post_' = post'
+
+-- | Makes a `PUT` request to the specified URL, sending data.
 put :: forall e a b. (Requestable a, Responsable b) => URL -> a -> Affjax e b
 put u c = affjax $ defaultRequest { method = PUT, url = u, content = Just c }
 
+-- | Makes a `PUT` request to the specified URL with the option to send data.
+put' :: forall e a b. (Requestable a, Responsable b) => URL -> Maybe a -> Affjax e b
+put' u c = affjax $ defaultRequest { method = PUT, url = u, content = c }
+
+-- | Makes a `PUT` request to the specified URL, sending data and ignoring the
+-- | response.
 put_ :: forall e a. (Requestable a) => URL -> a -> Affjax e Unit
 put_ = put
 
+-- | Makes a `PUT` request to the specified URL with the option to send data,
+-- | and ignores the response.
+put_' :: forall e a. (Requestable a) => URL -> Maybe a -> Affjax e Unit
+put_' = put'
+
+-- | Makes a `DELETE` request to the specified URL.
 delete :: forall e a. (Responsable a) => URL -> Affjax e a
 delete u = affjax $ defaultRequest { method = DELETE, url = u }
 
+-- | Makes a `DELETE` request to the specified URL and ignores the response.
 delete_ :: forall e. URL -> Affjax e Unit
 delete_ = delete
 

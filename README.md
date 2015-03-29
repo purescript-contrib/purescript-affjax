@@ -73,6 +73,7 @@ Makes an `Affjax` request.
 get :: forall e a. (Responsable a) => URL -> Affjax e a
 ```
 
+Makes a `GET` request to the specified URL.
 
 #### `post`
 
@@ -80,6 +81,15 @@ get :: forall e a. (Responsable a) => URL -> Affjax e a
 post :: forall e a b. (Requestable a, Responsable b) => URL -> a -> Affjax e b
 ```
 
+Makes a `POST` request to the specified URL, sending data.
+
+#### `post'`
+
+``` purescript
+post' :: forall e a b. (Requestable a, Responsable b) => URL -> Maybe a -> Affjax e b
+```
+
+Makes a `POST` request to the specified URL with the option to send data.
 
 #### `post_`
 
@@ -87,6 +97,17 @@ post :: forall e a b. (Requestable a, Responsable b) => URL -> a -> Affjax e b
 post_ :: forall e a. (Requestable a) => URL -> a -> Affjax e Unit
 ```
 
+Makes a `POST` request to the specified URL, sending data and ignoring the
+response.
+
+#### `post_'`
+
+``` purescript
+post_' :: forall e a. (Requestable a) => URL -> Maybe a -> Affjax e Unit
+```
+
+Makes a `POST` request to the specified URL with the option to send data,
+and ignores the response.
 
 #### `put`
 
@@ -94,6 +115,15 @@ post_ :: forall e a. (Requestable a) => URL -> a -> Affjax e Unit
 put :: forall e a b. (Requestable a, Responsable b) => URL -> a -> Affjax e b
 ```
 
+Makes a `PUT` request to the specified URL, sending data.
+
+#### `put'`
+
+``` purescript
+put' :: forall e a b. (Requestable a, Responsable b) => URL -> Maybe a -> Affjax e b
+```
+
+Makes a `PUT` request to the specified URL with the option to send data.
 
 #### `put_`
 
@@ -101,6 +131,17 @@ put :: forall e a b. (Requestable a, Responsable b) => URL -> a -> Affjax e b
 put_ :: forall e a. (Requestable a) => URL -> a -> Affjax e Unit
 ```
 
+Makes a `PUT` request to the specified URL, sending data and ignoring the
+response.
+
+#### `put_'`
+
+``` purescript
+put_' :: forall e a. (Requestable a) => URL -> Maybe a -> Affjax e Unit
+```
+
+Makes a `PUT` request to the specified URL with the option to send data,
+and ignores the response.
 
 #### `delete`
 
@@ -108,6 +149,7 @@ put_ :: forall e a. (Requestable a) => URL -> a -> Affjax e Unit
 delete :: forall e a. (Responsable a) => URL -> Affjax e a
 ```
 
+Makes a `DELETE` request to the specified URL.
 
 #### `delete_`
 
@@ -115,6 +157,7 @@ delete :: forall e a. (Responsable a) => URL -> Affjax e a
 delete_ :: forall e. URL -> Affjax e Unit
 ```
 
+Makes a `DELETE` request to the specified URL and ignores the response.
 
 #### `affjax'`
 
