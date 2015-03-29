@@ -24,6 +24,6 @@
     "purescript-dom": "~0.1.2",
     "purescript-foreign": "~0.4.2",
     "purescript-integers": "~0.0.1",
-    "purescript-options": "~0.3.0"
+    "purescript-nullable": "~0.1.1"
   }
 }

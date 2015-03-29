@@ -6,7 +6,6 @@ import Control.Monad.Eff.Class
 import Control.Monad.Eff.Exception
 import Data.Either
 import Data.Foreign
-import Data.Options
 import Debug.Trace
 import Network.HTTP.Affjax
 import Network.HTTP.Affjax.Response
@@ -25,25 +24,13 @@ foreign import traceAny
   }
   """ :: forall e a. a -> Eff (trace :: Trace | e) Unit
 
-foreign import noContent "var noContent = new FormData();" :: RequestContent
+main = launchAff $ do
 
-main = do
+  res <- attempt $ affjax $ defaultRequest { url = "/api", method = POST }
+  liftEff $ either traceAny (traceAny :: AffjaxResponse String -> _) res
 
-  go $ url := "/api"
-     <> headers := [ContentType applicationOctetStream]
-     <> content := (toContent "test")
+  res <- attempt $ post_ "/api" "test"
+  liftEff $ either traceAny traceAny res
 
-  go $ url := "/api"
-     <> method := POST
-     <> content := (toContent unit)
-
-  launchAff $ do
-    res <- attempt $ affjax rString $ url := "/api" <> method := POST
-    liftEff $ either traceAny traceAny res
-
-  launchAff $ do
-    res <- attempt $ get "/arrayview" rInt8Array
-    liftEff $ either traceAny traceAny res
-
-go :: forall e. Options AffjaxOptions -> Eff (ajax :: Ajax, trace :: Trace | e) Unit
-go opts = affjax' rUnit opts traceAny traceAny
+  res <- attempt $ get "/arrayview"
+  liftEff $ either traceAny (traceAny :: AffjaxResponse Foreign -> _) res

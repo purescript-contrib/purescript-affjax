@@ -1,5 +1,16 @@
 # Module Documentation
 
+## Module Type.Proxy
+
+#### `Proxy`
+
+``` purescript
+data Proxy a
+  = Proxy 
+```
+
+
+
 ## Module Network.HTTP.Affjax
 
 #### `Ajax`
@@ -18,13 +29,19 @@ type Affjax e a = Aff (ajax :: Ajax | e) (AffjaxResponse a)
 
 The type for Affjax requests.
 
-#### `AffjaxOptions`
+#### `AffjaxRequest`
 
 ``` purescript
-data AffjaxOptions :: *
+type AffjaxRequest a = { password :: Maybe String, username :: Maybe String, content :: Maybe a, headers :: [RequestHeader], url :: URL, method :: Method }
 ```
 
-Options type for Affjax requests.
+
+#### `defaultRequest`
+
+``` purescript
+defaultRequest :: AffjaxRequest Unit
+```
+
 
 #### `AffjaxResponse`
 
@@ -42,109 +59,53 @@ type URL = String
 
 Type alias for URL strings to aid readability of types.
 
-#### `url`
-
-``` purescript
-url :: Option AffjaxOptions URL
-```
-
-Sets the URL for a request.
-
-#### `method`
-
-``` purescript
-method :: Option AffjaxOptions Method
-```
-
-Sets the HTTP method for a request.
-
-#### `content`
-
-``` purescript
-content :: Option AffjaxOptions RequestContent
-```
-
-Sets the content to send in a request.
-
-#### `headers`
-
-``` purescript
-headers :: Option AffjaxOptions [RequestHeader]
-```
-
-Sets the headers to send with a request.
-
-#### `username`
-
-``` purescript
-username :: Option AffjaxOptions String
-```
-
-Sets the HTTP auth username to send with a request.
-
-#### `password`
-
-``` purescript
-password :: Option AffjaxOptions String
-```
-
-Sets the HTTP auth password to send with a request.
-
 #### `affjax`
 
 ``` purescript
-affjax :: forall e a. Responsable a -> Options AffjaxOptions -> Affjax e a
+affjax :: forall e a b. (Requestable a, Responsable b) => AffjaxRequest a -> Affjax e b
 ```
 
-Runs a request.
-
-#### `affjax'`
-
-``` purescript
-affjax' :: forall e a. Responsable a -> Options AffjaxOptions -> (Error -> Eff (ajax :: Ajax | e) Unit) -> (AffjaxResponse a -> Eff (ajax :: Ajax | e) Unit) -> Eff (ajax :: Ajax | e) Unit
-```
-
-Runs a request directly in Eff.
+Makes an `Affjax` request.
 
 #### `get`
 
 ``` purescript
-get :: forall e a. URL -> Responsable a -> Affjax e a
+get :: forall e a. (Responsable a) => URL -> Affjax e a
 ```
 
 
 #### `post`
 
 ``` purescript
-post :: forall e a. URL -> Responsable a -> RequestContent -> Affjax e a
+post :: forall e a b. (Requestable a, Responsable b) => URL -> a -> Affjax e b
 ```
 
 
 #### `post_`
 
 ``` purescript
-post_ :: forall e. URL -> RequestContent -> Affjax e Unit
+post_ :: forall e a. (Requestable a) => URL -> a -> Affjax e Unit
 ```
 
 
 #### `put`
 
 ``` purescript
-put :: forall e a. URL -> Responsable a -> RequestContent -> Affjax e a
+put :: forall e a b. (Requestable a, Responsable b) => URL -> a -> Affjax e b
 ```
 
 
 #### `put_`
 
 ``` purescript
-put_ :: forall e. URL -> RequestContent -> Affjax e Unit
+put_ :: forall e a. (Requestable a) => URL -> a -> Affjax e Unit
 ```
 
 
 #### `delete`
 
 ``` purescript
-delete :: forall e a. URL -> Responsable a -> Affjax e a
+delete :: forall e a. (Responsable a) => URL -> Affjax e a
 ```
 
 
@@ -154,6 +115,14 @@ delete :: forall e a. URL -> Responsable a -> Affjax e a
 delete_ :: forall e. URL -> Affjax e Unit
 ```
 
+
+#### `affjax'`
+
+``` purescript
+affjax' :: forall e a b. (Requestable a, Responsable b) => AffjaxRequest a -> (Error -> Eff (ajax :: Ajax | e) Unit) -> (AffjaxResponse b -> Eff (ajax :: Ajax | e) Unit) -> Eff (ajax :: Ajax | e) Unit
+```
+
+Run a request directly without using `Aff`.
 
 
 ## Module Network.HTTP.Method
@@ -186,13 +155,6 @@ instance eqMethod :: Eq Method
 
 ``` purescript
 instance showMethod :: Show Method
-```
-
-
-#### `isOptionMethod`
-
-``` purescript
-instance isOptionMethod :: IsOption Method
 ```
 
 
@@ -259,13 +221,6 @@ instance eqRequestHeader :: Eq RequestHeader
 
 ``` purescript
 instance showRequestHeader :: Show RequestHeader
-```
-
-
-#### `isOptionRequestHeader`
-
-``` purescript
-instance isOptionRequestHeader :: IsOption RequestHeader
 ```
 
 
@@ -351,18 +306,11 @@ data RequestContent :: *
 Type representing all content types that be sent via XHR (ArrayBufferView,
 Blob, Document, String, FormData).
 
-#### `isOptionRequestContent`
-
-``` purescript
-instance isOptionRequestContent :: IsOption RequestContent
-```
-
-
 #### `Requestable`
 
 ``` purescript
 class Requestable a where
-  toContent :: a -> RequestContent
+  toRequest :: a -> RequestContent
 ```
 
 A class for types that can be converted to values that can be sent with
@@ -488,106 +436,43 @@ Type representing content types that be received from an XHR request
 #### `Responsable`
 
 ``` purescript
-data Responsable a
-  = Responsable (ResponseContent -> F a) ResponseType
+class Responsable a where
+  responseType :: Proxy a -> ResponseType
+  fromResponse :: ResponseContent -> F a
 ```
 
 
-#### `rInt8Array`
+#### `responsableBlob`
 
 ``` purescript
-rInt8Array :: Responsable A.Int8Array
+instance responsableBlob :: Responsable Blob
+```
+
+#### `responsableDocument`
+
+``` purescript
+instance responsableDocument :: Responsable Document
 ```
 
 
-#### `rInt16Array`
+#### `responsableJSON`
 
 ``` purescript
-rInt16Array :: Responsable A.Int16Array
+instance responsableJSON :: Responsable Foreign
 ```
 
 
-#### `rInt32Array`
+#### `responsableString`
 
 ``` purescript
-rInt32Array :: Responsable A.Int32Array
+instance responsableString :: Responsable String
 ```
 
 
-#### `rUint8Array`
+#### `responsableUnit`
 
 ``` purescript
-rUint8Array :: Responsable A.Uint8Array
-```
-
-
-#### `rUint16Array`
-
-``` purescript
-rUint16Array :: Responsable A.Uint16Array
-```
-
-
-#### `rUint32Array`
-
-``` purescript
-rUint32Array :: Responsable A.Uint32Array
-```
-
-
-#### `rUint8ClampedArray`
-
-``` purescript
-rUint8ClampedArray :: Responsable A.Uint8ClampedArray
-```
-
-
-#### `rFloat32Array`
-
-``` purescript
-rFloat32Array :: Responsable A.Float32Array
-```
-
-
-#### `rFloat64Array`
-
-``` purescript
-rFloat64Array :: Responsable A.Float64Array
-```
-
-
-#### `rBlob`
-
-``` purescript
-rBlob :: Responsable Blob
-```
-
-
-#### `rDocument`
-
-``` purescript
-rDocument :: Responsable Document
-```
-
-
-#### `rJSON`
-
-``` purescript
-rJSON :: Responsable Foreign
-```
-
-
-#### `rString`
-
-``` purescript
-rString :: Responsable String
-```
-
-
-#### `rUnit`
-
-``` purescript
-rUnit :: Responsable Unit
+instance responsableUnit :: Responsable Unit
 ```
 
 
@@ -619,13 +504,6 @@ instance eqResponseType :: Eq ResponseType
 
 ``` purescript
 instance showResponseType :: Show ResponseType
-```
-
-
-#### `isOptionResponseType`
-
-``` purescript
-instance isOptionResponseType :: IsOption ResponseType
 ```
 
 

@@ -1,7 +1,5 @@
 module Network.HTTP.Method where
 
-import Data.Options (IsOption, optionFn, (:=))
-
 data Method
   = DELETE
   | GET
@@ -38,9 +36,6 @@ instance showMethod :: Show Method where
   show MOVE    = "MOVE"
   show COPY    = "COPY"
   show (CustomMethod m) = "(CustomMethod " ++ show m ++ ")"
-
-instance isOptionMethod :: IsOption Method where
-  (:=) k a = (optionFn k) := methodToString a
 
 methodToString :: Method -> String
 methodToString (CustomMethod m) = m

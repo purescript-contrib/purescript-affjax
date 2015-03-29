@@ -1,9 +1,8 @@
 module Network.HTTP.Affjax.Request
   ( RequestContent()
-  , Requestable, toContent
+  , Requestable, toRequest
   ) where
 
-import Data.Options (Option(), Options(), IsOption, (:=))
 import DOM (Document())
 import DOM.File (Blob())
 import DOM.XHR (FormData())
@@ -13,67 +12,55 @@ import qualified Data.ArrayBuffer.Types as A
 -- | Blob, Document, String, FormData).
 foreign import data RequestContent :: *
 
-instance isOptionRequestContent :: IsOption RequestContent where
-  (:=) = unsafeIsOption
-
 -- | A class for types that can be converted to values that can be sent with
 -- | XHR requests.
 class Requestable a where
-  toContent :: a -> RequestContent
+  toRequest :: a -> RequestContent
 
 instance requestableRequestContent :: Requestable RequestContent where
-  toContent = id
+  toRequest = id
 
 instance requestableInt8Array :: Requestable (A.ArrayView A.Int8) where
-  toContent = unsafeConversion
+  toRequest = unsafeConversion
 
 instance requestableInt16Array :: Requestable (A.ArrayView A.Int16) where
-  toContent = unsafeConversion
+  toRequest = unsafeConversion
 
 instance requestableInt32Array :: Requestable (A.ArrayView A.Int32) where
-  toContent = unsafeConversion
+  toRequest = unsafeConversion
 
 instance requestableUint8Array :: Requestable (A.ArrayView A.Uint8) where
-  toContent = unsafeConversion
+  toRequest = unsafeConversion
 
 instance requestableUint16Array :: Requestable (A.ArrayView A.Uint16) where
-  toContent = unsafeConversion
+  toRequest = unsafeConversion
 
 instance requestableUint32Array :: Requestable (A.ArrayView A.Uint32) where
-  toContent = unsafeConversion
+  toRequest = unsafeConversion
 
 instance requestableUint8ClampedArray :: Requestable (A.ArrayView A.Uint8Clamped) where
-  toContent = unsafeConversion
+  toRequest = unsafeConversion
 
 instance requestableFloat32Array :: Requestable (A.ArrayView A.Float32) where
-  toContent = unsafeConversion
+  toRequest = unsafeConversion
 
 instance requestableFloat64Array :: Requestable (A.ArrayView A.Float64) where
-  toContent = unsafeConversion
+  toRequest = unsafeConversion
 
 instance requestableBlob :: Requestable Blob where
-  toContent = unsafeConversion
+  toRequest = unsafeConversion
 
 instance requestableDocument :: Requestable Document where
-  toContent = unsafeConversion
+  toRequest = unsafeConversion
 
 instance requestableString :: Requestable String where
-  toContent = unsafeConversion
+  toRequest = unsafeConversion
 
 instance requestableFormData :: Requestable FormData where
-  toContent = unsafeConversion
+  toRequest = unsafeConversion
 
 instance requestableUnit :: Requestable Unit where
-  toContent = unsafeConversion
-
-foreign import unsafeIsOption
-  """
-  function unsafeIsOption(k) {
-    return function (v) {
-      return [[k, v]];
-    };
-  }
-  """ :: forall b a. (Option b a) -> a -> (Options b)
+  toRequest = unsafeConversion
 
 foreign import unsafeConversion
   """

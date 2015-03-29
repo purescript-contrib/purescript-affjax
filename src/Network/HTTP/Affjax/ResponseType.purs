@@ -1,7 +1,5 @@
 module Network.HTTP.Affjax.ResponseType where
 
-import Data.Options (IsOption, optionFn, (:=))
-
 -- | Valid response types for an AJAX request. This is used to determine the
 -- | `ResponseContent` type for a request.
 data ResponseType
@@ -26,9 +24,6 @@ instance showResponseType :: Show ResponseType where
   show DocumentResponse = "DocumentResponse"
   show JSONResponse = "JSONResponse"
   show StringResponse = "StringResponse"
-
-instance isOptionResponseType :: IsOption ResponseType where
-  (:=) k a = (optionFn k) := ajaxResponseTypeToString a
 
 ajaxResponseTypeToString :: ResponseType -> String
 ajaxResponseTypeToString ArrayBufferResponse = "arraybuffer"

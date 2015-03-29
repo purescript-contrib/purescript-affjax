@@ -1,6 +1,5 @@
 module Network.HTTP.RequestHeader where
 
-import Data.Options (IsOption, optionFn, (:=))
 import Network.HTTP.MimeType
 
 data RequestHeader
@@ -19,9 +18,6 @@ instance showRequestHeader :: Show RequestHeader where
   show (Accept m) = "(Accept " ++ show m ++ ")"
   show (ContentType m) = "(ContentType " ++ show m ++ ")"
   show (RequestHeader h v) = "(RequestHeader " ++ show h ++ " " ++ show v ++ ")"
-
-instance isOptionRequestHeader :: IsOption RequestHeader where
-  (:=) k a = (optionFn k) := { field: requestHeaderName a, value: requestHeaderValue a }
 
 requestHeaderName :: RequestHeader -> String
 requestHeaderName (Accept _) = "Accept"

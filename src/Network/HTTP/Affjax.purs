@@ -1,10 +1,9 @@
 module Network.HTTP.Affjax
   ( Ajax()
   , Affjax()
-  , AffjaxOptions()
+  , AffjaxRequest(), defaultRequest
   , AffjaxResponse()
   , URL()
-  , url, method, content, headers, username, password
   , affjax
   , affjax'
   , get
@@ -16,15 +15,16 @@ module Network.HTTP.Affjax
 import Control.Monad.Aff (Aff(), makeAff)
 import Control.Monad.Eff (Eff())
 import Control.Monad.Eff.Exception (Error(), error)
+import Data.Maybe (Maybe(..))
 import Data.Either (Either(..))
 import Data.Foreign (Foreign(..), F())
 import Data.Function (Fn4(), runFn4)
-import Data.Options (Option(), Options(), options, (:=), opt)
+import Data.Nullable (Nullable(), toNullable)
 import Network.HTTP.Affjax.Request
 import Network.HTTP.Affjax.Response
 import Network.HTTP.Affjax.ResponseType
-import Network.HTTP.Method (Method(..))
-import Network.HTTP.RequestHeader (RequestHeader())
+import Network.HTTP.Method (Method(..), methodToString)
+import Network.HTTP.RequestHeader (RequestHeader(), requestHeaderName, requestHeaderValue)
 import Network.HTTP.ResponseHeader (ResponseHeader(), responseHeader)
 import Network.HTTP.StatusCode (StatusCode())
 
@@ -34,8 +34,24 @@ foreign import data Ajax :: !
 -- | The type for Affjax requests.
 type Affjax e a = Aff (ajax :: Ajax | e) (AffjaxResponse a)
 
--- | Options type for Affjax requests.
-foreign import data AffjaxOptions :: *
+type AffjaxRequest a =
+  { method :: Method
+  , url :: URL
+  , headers :: [RequestHeader]
+  , content :: Maybe a
+  , username :: Maybe String
+  , password :: Maybe String
+  }
+
+defaultRequest :: AffjaxRequest Unit
+defaultRequest =
+  { method: GET
+  , url: "/"
+  , headers: []
+  , content: Nothing
+  , username: Nothing
+  , password: Nothing
+  }
 
 -- | The type of records that will be received as an Affjax response.
 type AffjaxResponse a =
@@ -47,81 +63,61 @@ type AffjaxResponse a =
 -- | Type alias for URL strings to aid readability of types.
 type URL = String
 
--- | Sets the URL for a request.
-url :: Option AffjaxOptions URL
-url = opt "url"
+-- | Makes an `Affjax` request.
+affjax :: forall e a b. (Requestable a, Responsable b) => AffjaxRequest a -> Affjax e b
+affjax = makeAff <<< affjax'
 
--- | Sets the HTTP method for a request.
-method :: Option AffjaxOptions Method
-method = opt "method"
+get :: forall e a. (Responsable a) => URL -> Affjax e a
+get u = affjax $ defaultRequest { url = u }
 
--- | Sets the content to send in a request.
-content :: Option AffjaxOptions RequestContent
-content = opt "content"
+post :: forall e a b. (Requestable a, Responsable b) => URL -> a -> Affjax e b
+post u c = affjax $ defaultRequest { method = POST, url = u, content = Just c }
 
--- | Sets the headers to send with a request.
-headers :: Option AffjaxOptions [RequestHeader]
-headers = opt "headers"
+post_ :: forall e a. (Requestable a) => URL -> a -> Affjax e Unit
+post_ = post
 
--- | Sets the HTTP auth username to send with a request.
-username :: Option AffjaxOptions String
-username = opt "username"
+put :: forall e a b. (Requestable a, Responsable b) => URL -> a -> Affjax e b
+put u c = affjax $ defaultRequest { method = PUT, url = u, content = Just c }
 
--- | Sets the HTTP auth password to send with a request.
-password :: Option AffjaxOptions String
-password = opt "password"
+put_ :: forall e a. (Requestable a) => URL -> a -> Affjax e Unit
+put_ = put
 
--- | Sets the expected response type for a request. This is not exposed outside
--- | of the module as the `ResponseType` is set based on the `Responsable`
--- | instance for the expected result content type.
-responseType = opt "responseType" :: Option AffjaxOptions ResponseType
+delete :: forall e a. (Responsable a) => URL -> Affjax e a
+delete u = affjax $ defaultRequest { method = DELETE, url = u }
 
--- | Runs a request.
-affjax :: forall e a. Responsable a ->
-                      Options AffjaxOptions ->
-                      Affjax e a
-affjax r = makeAff <<< affjax' r
+delete_ :: forall e. URL -> Affjax e Unit
+delete_ = delete
 
--- | Runs a request directly in Eff.
-affjax' :: forall e a. Responsable a ->
-                       Options AffjaxOptions ->
-                       (Error -> Eff (ajax :: Ajax | e) Unit) ->
-                       (AffjaxResponse a -> Eff (ajax :: Ajax | e) Unit) ->
-                       Eff (ajax :: Ajax | e) Unit
-affjax' (Responsable read ty) opts eb cb =
-  runFn4 unsafeAjax responseHeader (options $ opts <> responseType := ty) eb cb'
+-- | Run a request directly without using `Aff`.
+affjax' :: forall e a b. (Requestable a, Responsable b) =>
+                         AffjaxRequest a ->
+                         (Error -> Eff (ajax :: Ajax | e) Unit) ->
+                         (AffjaxResponse b -> Eff (ajax :: Ajax | e) Unit) ->
+                         Eff (ajax :: Ajax | e) Unit
+affjax' req eb cb =
+  runFn4 unsafeAjax responseHeader req' eb cb'
   where
-  cb' :: AffjaxResponse Foreign -> Eff (ajax :: Ajax | e) Unit
-  cb' res = case res { response = _  } <$> read res.response of
+  req' :: AjaxRequest
+  req' = { method: methodToString req.method
+         , url: req.url
+         , headers: (\h -> { field: requestHeaderName h, value: requestHeaderValue h }) <$> req.headers
+         , content: toNullable (toRequest <$> req.content)
+         , username: toNullable req.username
+         , password: toNullable req.password
+         }
+  cb' :: AffjaxResponse ResponseContent -> Eff (ajax :: Ajax | e) Unit
+  cb' res = case res { response = _  } <$> fromResponse res.response of
     Left err -> eb $ error (show err)
     Right res' -> cb res'
 
-get :: forall e a. URL -> Responsable a -> Affjax e a
-get u r = affjax r $ method := GET
-                  <> url := u
-
-post :: forall e a. URL -> Responsable a -> RequestContent -> Affjax e a
-post u r c = affjax r $ method := POST
-                     <> url := u
-                     <> content := c
-
-post_ :: forall e. URL -> RequestContent -> Affjax e Unit
-post_ = flip post rUnit
-
-put :: forall e a. URL -> Responsable a -> RequestContent -> Affjax e a
-put u r c = affjax r $ method := PUT
-                    <> url := u
-                    <> content := c
-
-put_ :: forall e. URL -> RequestContent -> Affjax e Unit
-put_ = flip put rUnit
-
-delete :: forall e a. URL -> Responsable a -> Affjax e a
-delete u r = affjax r $ method := DELETE
-                     <> url := u
-
-delete_ :: forall e. URL -> Affjax e Unit
-delete_ = flip delete rUnit
+type AjaxRequest =
+  { method :: String
+  , url :: URL
+  , headers :: [{ field :: String, value :: String }]
+  , content :: Nullable RequestContent
+  , username :: Nullable String
+  , password :: Nullable String
+  }
 
 foreign import unsafeAjax
   """
@@ -156,7 +152,7 @@ foreign import unsafeAjax
     };
   }
   """ :: forall e a. Fn4 (String -> String -> ResponseHeader)
-                     Foreign
+                     AjaxRequest
                      (Error -> Eff (ajax :: Ajax | e) Unit)
                      (AffjaxResponse Foreign -> Eff (ajax :: Ajax | e) Unit)
                      (Eff (ajax :: Ajax | e) Unit)
