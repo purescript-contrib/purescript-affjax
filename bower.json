@@ -1,0 +1,29 @@
+{
+  "name": "purescript-affjax",
+  "homepage": "https://github.com/slamdata/purescript-affjax",
+  "description": "An asynchronous AJAX library built using Aff.",
+  "keywords": [
+    "purescript",
+    "ajax"
+  ],
+  "license": "Apache 2.0",
+  "ignore": [
+    "**/.*",
+    "bower_components",
+    "node_modules",
+    "output",
+    "test",
+    "tmp",
+    "bower.json",
+    "gulpfile.js",
+    "package.json"
+  ],
+  "dependencies": {
+    "purescript-aff": "~0.7.0",
+    "purescript-arraybuffer-types": "~0.1.1",
+    "purescript-dom": "~0.1.2",
+    "purescript-foreign": "~0.4.2",
+    "purescript-integers": "~0.0.1",
+    "purescript-nullable": "~0.1.1"
+  }
+}
