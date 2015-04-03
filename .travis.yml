@@ -1,0 +1,13 @@
+language: node_js
+node_js:
+  - 0.10
+env:
+  - TAG=v0.6.9.3
+install:
+  - wget -O $HOME/purescript.tar.gz https://github.com/purescript/purescript/releases/download/$TAG/linux64.tar.gz
+  - sudo tar zxvf $HOME/purescript.tar.gz -C /usr/local/bin purescript/psc{,i,-docs,-make} --strip-components=1
+  - sudo chmod a+x /usr/local/bin/psc{,i,-docs,-make}
+  - npm install bower gulp -g
+  - npm install && bower install
+script:
+  - gulp
