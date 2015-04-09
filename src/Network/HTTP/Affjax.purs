@@ -161,7 +161,7 @@ foreign import unsafeAjax
         }
       }
       xhr.onerror = function (err) {
-        errback(err)();
+        errback(new Error("AJAX request failed"))();
       };
       xhr.onload = function () {
         callback({
