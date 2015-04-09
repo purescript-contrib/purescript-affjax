@@ -1,16 +1,5 @@
 # Module Documentation
 
-## Module Type.Proxy
-
-#### `Proxy`
-
-``` purescript
-data Proxy a
-  = Proxy 
-```
-
-
-
 ## Module Network.HTTP.Affjax
 
 #### `Ajax`
