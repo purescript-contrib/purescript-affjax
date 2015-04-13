@@ -34,3 +34,6 @@ main = launchAff $ do
 
   res <- attempt $ get "/arrayview"
   liftEff $ either traceAny (traceAny :: AffjaxResponse Foreign -> _) res
+
+  res <- attempt $ get "ttp://www.google.com"
+  liftEff $ either traceAny (traceAny :: AffjaxResponse Foreign -> _) res
