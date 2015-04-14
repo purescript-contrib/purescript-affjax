@@ -12,7 +12,7 @@ module Network.HTTP.Affjax
   , delete, delete_
   ) where
 
-import Control.Monad.Aff (Aff(), makeAff, makeAff', Canceler())
+import Control.Monad.Aff (Aff(), makeAff, makeAff', Canceler(..))
 import Control.Monad.Eff (Eff())
 import Control.Monad.Eff.Exception (Error(), error)
 import Data.Either (Either(..))
@@ -191,7 +191,7 @@ foreign import _ajax
                      (Eff (ajax :: Ajax | e) (Canceler (ajax :: Ajax | e)))
 
 cancelAjax :: forall e. XMLHttpRequest -> Canceler (ajax :: Ajax | e)
-cancelAjax xhr err = makeAff (\eb cb -> runFn4 _cancelAjax xhr err eb cb)
+cancelAjax xhr = Canceler \err -> makeAff (\eb cb -> runFn4 _cancelAjax xhr err eb cb)
 
 foreign import _cancelAjax
   """

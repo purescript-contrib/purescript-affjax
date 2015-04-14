@@ -39,5 +39,5 @@ main = launchAff $ do
   liftEff $ either traceAny (traceAny :: AffjaxResponse Foreign -> _) res
 
   canceler <- forkAff (post_ "/api" "do it now")
-  canceled <- canceler $ error "Pull the cord!"
+  canceled <- canceler `cancel` error "Pull the cord!"
   liftEff $ if canceled then (trace "Canceled") else (trace "Not Canceled")
