@@ -2,10 +2,10 @@
 
 ## Module Network.HTTP.Affjax
 
-#### `Ajax`
+#### `AJAX`
 
 ``` purescript
-data Ajax :: !
+data AJAX :: !
 ```
 
 The effect type for AJAX requests made with Affjax.
@@ -13,7 +13,7 @@ The effect type for AJAX requests made with Affjax.
 #### `Affjax`
 
 ``` purescript
-type Affjax e a = Aff (ajax :: Ajax | e) (AffjaxResponse a)
+type Affjax e a = Aff (ajax :: AJAX | e) (AffjaxResponse a)
 ```
 
 The type for Affjax requests.
@@ -151,7 +151,7 @@ Makes a `DELETE` request to the specified URL and ignores the response.
 #### `affjax'`
 
 ``` purescript
-affjax' :: forall e a b. (Requestable a, Responsable b) => AffjaxRequest a -> (Error -> Eff (ajax :: Ajax | e) Unit) -> (AffjaxResponse b -> Eff (ajax :: Ajax | e) Unit) -> Eff (ajax :: Ajax | e) (Canceler (ajax :: Ajax | e))
+affjax' :: forall e a b. (Requestable a, Responsable b) => AffjaxRequest a -> (Error -> Eff (ajax :: AJAX | e) Unit) -> (AffjaxResponse b -> Eff (ajax :: AJAX | e) Unit) -> Eff (ajax :: AJAX | e) (Canceler (ajax :: AJAX | e))
 ```
 
 Run a request directly without using `Aff`.
