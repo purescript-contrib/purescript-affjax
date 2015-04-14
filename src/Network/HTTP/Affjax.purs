@@ -1,5 +1,5 @@
 module Network.HTTP.Affjax
-  ( Ajax()
+  ( AJAX()
   , Affjax()
   , AffjaxRequest(), defaultRequest
   , AffjaxResponse()
@@ -31,10 +31,10 @@ import Network.HTTP.StatusCode (StatusCode())
 import Type.Proxy (Proxy(..))
 
 -- | The effect type for AJAX requests made with Affjax.
-foreign import data Ajax :: !
+foreign import data AJAX :: !
 
 -- | The type for Affjax requests.
-type Affjax e a = Aff (ajax :: Ajax | e) (AffjaxResponse a)
+type Affjax e a = Aff (ajax :: AJAX | e) (AffjaxResponse a)
 
 type AffjaxRequest a =
   { method :: Method
@@ -120,9 +120,9 @@ delete_ = delete
 -- | Run a request directly without using `Aff`.
 affjax' :: forall e a b. (Requestable a, Responsable b) =>
                          AffjaxRequest a ->
-                         (Error -> Eff (ajax :: Ajax | e) Unit) ->
-                         (AffjaxResponse b -> Eff (ajax :: Ajax | e) Unit) ->
-                         Eff (ajax :: Ajax | e) (Canceler (ajax :: Ajax | e))
+                         (Error -> Eff (ajax :: AJAX | e) Unit) ->
+                         (AffjaxResponse b -> Eff (ajax :: AJAX | e) Unit) ->
+                         Eff (ajax :: AJAX | e) (Canceler (ajax :: AJAX | e))
 affjax' req eb cb =
   runFn5 _ajax responseHeader req' cancelAjax eb cb'
   where
@@ -135,7 +135,7 @@ affjax' req eb cb =
          , username: toNullable req.username
          , password: toNullable req.password
          }
-  cb' :: AffjaxResponse ResponseContent -> Eff (ajax :: Ajax | e) Unit
+  cb' :: AffjaxResponse ResponseContent -> Eff (ajax :: AJAX | e) Unit
   cb' res = case res { response = _  } <$> fromResponse res.response of
     Left err -> eb $ error (show err)
     Right res' -> cb res'
@@ -185,12 +185,12 @@ foreign import _ajax
   }
   """ :: forall e a. Fn5 (String -> String -> ResponseHeader)
                      AjaxRequest
-                     (XMLHttpRequest -> Canceler (ajax :: Ajax | e))
-                     (Error -> Eff (ajax :: Ajax | e) Unit)
-                     (AffjaxResponse Foreign -> Eff (ajax :: Ajax | e) Unit)
-                     (Eff (ajax :: Ajax | e) (Canceler (ajax :: Ajax | e)))
+                     (XMLHttpRequest -> Canceler (ajax :: AJAX | e))
+                     (Error -> Eff (ajax :: AJAX | e) Unit)
+                     (AffjaxResponse Foreign -> Eff (ajax :: AJAX | e) Unit)
+                     (Eff (ajax :: AJAX | e) (Canceler (ajax :: AJAX | e)))
 
-cancelAjax :: forall e. XMLHttpRequest -> Canceler (ajax :: Ajax | e)
+cancelAjax :: forall e. XMLHttpRequest -> Canceler (ajax :: AJAX | e)
 cancelAjax xhr = Canceler \err -> makeAff (\eb cb -> runFn4 _cancelAjax xhr err eb cb)
 
 foreign import _cancelAjax
@@ -203,6 +203,6 @@ foreign import _cancelAjax
   };
   """ :: forall e. Fn4 XMLHttpRequest
                        Error
-                       (Error -> Eff (ajax :: Ajax | e) Unit)
-                       (Boolean -> Eff (ajax :: Ajax | e) Unit)
-                       (Eff (ajax :: Ajax | e) Unit)
+                       (Error -> Eff (ajax :: AJAX | e) Unit)
+                       (Boolean -> Eff (ajax :: AJAX | e) Unit)
+                       (Eff (ajax :: AJAX | e) Unit)
