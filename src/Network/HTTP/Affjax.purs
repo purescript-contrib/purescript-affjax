@@ -12,14 +12,15 @@ module Network.HTTP.Affjax
   , delete, delete_
   ) where
 
-import Control.Monad.Aff (Aff(), makeAff)
+import Control.Monad.Aff (Aff(), makeAff, makeAff', Canceler())
 import Control.Monad.Eff (Eff())
 import Control.Monad.Eff.Exception (Error(), error)
 import Data.Either (Either(..))
 import Data.Foreign (Foreign(..), F())
-import Data.Function (Fn4(), runFn4)
+import Data.Function (Fn5(), runFn5, Fn4(), runFn4)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (Nullable(), toNullable)
+import DOM.XHR (XMLHttpRequest())
 import Network.HTTP.Affjax.Request
 import Network.HTTP.Affjax.Response
 import Network.HTTP.Affjax.ResponseType
@@ -66,7 +67,7 @@ type URL = String
 
 -- | Makes an `Affjax` request.
 affjax :: forall e a b. (Requestable a, Responsable b) => AffjaxRequest a -> Affjax e b
-affjax = makeAff <<< affjax'
+affjax = makeAff' <<< affjax'
 
 -- | Makes a `GET` request to the specified URL.
 get :: forall e a. (Responsable a) => URL -> Affjax e a
@@ -121,9 +122,9 @@ affjax' :: forall e a b. (Requestable a, Responsable b) =>
                          AffjaxRequest a ->
                          (Error -> Eff (ajax :: Ajax | e) Unit) ->
                          (AffjaxResponse b -> Eff (ajax :: Ajax | e) Unit) ->
-                         Eff (ajax :: Ajax | e) Unit
+                         Eff (ajax :: Ajax | e) (Canceler (ajax :: Ajax | e))
 affjax' req eb cb =
-  runFn4 unsafeAjax responseHeader req' eb cb'
+  runFn5 _ajax responseHeader req' cancelAjax eb cb'
   where
   req' :: AjaxRequest
   req' = { method: methodToString req.method
@@ -149,9 +150,9 @@ type AjaxRequest =
   , password :: Nullable String
   }
 
-foreign import unsafeAjax
+foreign import _ajax
   """
-  function unsafeAjax (mkHeader, options, errback, callback) {
+  function _ajax (mkHeader, options, canceler, errback, callback) {
     return function () {
       var xhr = new XMLHttpRequest();
       xhr.open(options.method || "GET", options.url || "/", true, options.username, options.password);
@@ -179,10 +180,29 @@ foreign import unsafeAjax
       };
       xhr.responseType = options.responseType;
       xhr.send(options.content);
+      return canceler(xhr);
     };
   }
-  """ :: forall e a. Fn4 (String -> String -> ResponseHeader)
+  """ :: forall e a. Fn5 (String -> String -> ResponseHeader)
                      AjaxRequest
+                     (XMLHttpRequest -> Canceler (ajax :: Ajax | e))
                      (Error -> Eff (ajax :: Ajax | e) Unit)
                      (AffjaxResponse Foreign -> Eff (ajax :: Ajax | e) Unit)
-                     (Eff (ajax :: Ajax | e) Unit)
+                     (Eff (ajax :: Ajax | e) (Canceler (ajax :: Ajax | e)))
+
+cancelAjax :: forall e. XMLHttpRequest -> Canceler (ajax :: Ajax | e)
+cancelAjax xhr err = makeAff (\eb cb -> runFn4 _cancelAjax xhr err eb cb)
+
+foreign import _cancelAjax
+  """
+  function _cancelAjax (xhr, cancelError, errback, callback) {
+    return function () {
+      try { xhr.abort(); } catch (e) { return errback(e)(); }
+      return callback(true)();
+    };
+  };
+  """ :: forall e. Fn4 XMLHttpRequest
+                       Error
+                       (Error -> Eff (ajax :: Ajax | e) Unit)
+                       (Boolean -> Eff (ajax :: Ajax | e) Unit)
+                       (Eff (ajax :: Ajax | e) Unit)
