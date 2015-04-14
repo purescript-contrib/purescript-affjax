@@ -151,7 +151,7 @@ Makes a `DELETE` request to the specified URL and ignores the response.
 #### `affjax'`
 
 ``` purescript
-affjax' :: forall e a b. (Requestable a, Responsable b) => AffjaxRequest a -> (Error -> Eff (ajax :: Ajax | e) Unit) -> (AffjaxResponse b -> Eff (ajax :: Ajax | e) Unit) -> Eff (ajax :: Ajax | e) Unit
+affjax' :: forall e a b. (Requestable a, Responsable b) => AffjaxRequest a -> (Error -> Eff (ajax :: Ajax | e) Unit) -> (AffjaxResponse b -> Eff (ajax :: Ajax | e) Unit) -> Eff (ajax :: Ajax | e) (Canceler (ajax :: Ajax | e))
 ```
 
 Run a request directly without using `Aff`.
