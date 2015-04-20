@@ -14,15 +14,17 @@ import Type.Proxy (Proxy())
 import qualified Data.ArrayBuffer.Types as A
 
 -- | Valid response types for an AJAX request. This is used to determine the
--- | `ResponseContent` type for a request.
-data ResponseType
+-- | `ResponseContent` type for a request. The `a` type variable is a phantom
+-- | type used to associate the `ResponseType` with a particular instance of
+-- | `Respondable`.
+data ResponseType a
   = ArrayBufferResponse
   | BlobResponse
   | DocumentResponse
   | JSONResponse
   | StringResponse
 
-instance eqResponseType :: Eq ResponseType where
+instance eqResponseType :: Eq (ResponseType a) where
   (==) ArrayBufferResponse ArrayBufferResponse = true
   (==) BlobResponse        BlobResponse        = true
   (==) DocumentResponse    DocumentResponse    = true
@@ -31,14 +33,14 @@ instance eqResponseType :: Eq ResponseType where
   (==) _ _ = false
   (/=) x y = not (x == y)
 
-instance showResponseType :: Show ResponseType where
+instance showResponseType :: Show (ResponseType a) where
   show ArrayBufferResponse = "ArrayBufferResponse"
   show BlobResponse = "BlobResponse"
   show DocumentResponse = "DocumentResponse"
   show JSONResponse = "JSONResponse"
   show StringResponse = "StringResponse"
 
-responseTypeToString :: ResponseType -> String
+responseTypeToString :: forall a. (ResponseType a) -> String
 responseTypeToString ArrayBufferResponse = "arraybuffer"
 responseTypeToString BlobResponse = "blob"
 responseTypeToString DocumentResponse = "document"
@@ -50,25 +52,25 @@ responseTypeToString StringResponse = "text"
 type ResponseContent = Foreign
 
 class Respondable a where
-  responseType :: Proxy a -> ResponseType
+  responseType :: ResponseType a
   fromResponse :: ResponseContent -> F a
 
 instance responsableBlob :: Respondable Blob where
-  responseType _ = BlobResponse
+  responseType = BlobResponse
   fromResponse = unsafeReadTagged "Blob"
 
 instance responsableDocument :: Respondable Document where
-  responseType _ = DocumentResponse
+  responseType = DocumentResponse
   fromResponse = unsafeReadTagged "Document"
 
 instance responsableJSON :: Respondable Foreign where
-  responseType _ = JSONResponse
+  responseType = JSONResponse
   fromResponse = Right
 
 instance responsableString :: Respondable String where
-  responseType _ = StringResponse
+  responseType = StringResponse
   fromResponse = readString
 
 instance responsableUnit :: Respondable Unit where
-  responseType _ = StringResponse
+  responseType = StringResponse
   fromResponse = const (Right unit)

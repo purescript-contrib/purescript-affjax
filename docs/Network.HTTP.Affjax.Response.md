@@ -5,30 +5,32 @@
 #### `ResponseType`
 
 ``` purescript
-data ResponseType
+data ResponseType a
 ```
 
 Valid response types for an AJAX request. This is used to determine the
-`ResponseContent` type for a request.
+`ResponseContent` type for a request. The `a` type variable is a phantom
+type used to associate the `ResponseType` with a particular instance of
+`Respondable`.
 
 #### `eqResponseType`
 
 ``` purescript
-instance eqResponseType :: Eq ResponseType
+instance eqResponseType :: Eq (ResponseType a)
 ```
 
 
 #### `showResponseType`
 
 ``` purescript
-instance showResponseType :: Show ResponseType
+instance showResponseType :: Show (ResponseType a)
 ```
 
 
 #### `responseTypeToString`
 
 ``` purescript
-responseTypeToString :: ResponseType -> String
+responseTypeToString :: forall a. ResponseType a -> String
 ```
 
 
@@ -45,7 +47,7 @@ Type representing content types that be received from an XHR request
 
 ``` purescript
 class Respondable a where
-  responseType :: Proxy a -> ResponseType
+  responseType :: ResponseType a
   fromResponse :: ResponseContent -> F a
 ```
 
