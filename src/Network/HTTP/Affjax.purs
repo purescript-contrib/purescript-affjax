@@ -196,7 +196,7 @@ foreign import _cancelAjax
   """
   function _cancelAjax (xhr, cancelError, errback, callback) {
     return function () {
-      try { xhr.abort(); } catch (e) { return errback(e)(); }
+      try { xhr.abort(); } catch (e) { return callback(false)(); }
       return callback(true)();
     };
   };
