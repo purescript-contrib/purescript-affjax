@@ -37,7 +37,7 @@ var docTask = function(name) {
   docTasks.push(taskName);
 };
 
-["Network.HTTP.Affjax", "Network.HTTP.Affjax.Request", "Network.HTTP.Response",
+["Network.HTTP.Affjax", "Network.HTTP.Affjax.Request", "Network.HTTP.Affjax.Response",
  "Network.HTTP.Method", "Network.HTTP.MimeType", "Network.HTTP.MimeType.Common",
  "Network.HTTP.RequestHeader", "Network.HTTP.ResponseHeader",
  "Network.HTTP.StatusCode"].forEach(docTask);
