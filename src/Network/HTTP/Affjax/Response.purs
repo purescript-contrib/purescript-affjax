@@ -10,7 +10,6 @@ import Data.Foreign (Foreign(), F(), readString, parseJSON, unsafeReadTagged)
 import DOM (Document())
 import DOM.File (Blob())
 import DOM.XHR (FormData())
-import Type.Proxy (Proxy())
 import qualified Data.ArrayBuffer.Types as A
 
 -- | Valid response types for an AJAX request. This is used to determine the
