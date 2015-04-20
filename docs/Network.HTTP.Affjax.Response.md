@@ -1,0 +1,89 @@
+# Module Documentation
+
+## Module Network.HTTP.Affjax.Response
+
+#### `ResponseType`
+
+``` purescript
+data ResponseType
+```
+
+Valid response types for an AJAX request. This is used to determine the
+`ResponseContent` type for a request.
+
+#### `eqResponseType`
+
+``` purescript
+instance eqResponseType :: Eq ResponseType
+```
+
+
+#### `showResponseType`
+
+``` purescript
+instance showResponseType :: Show ResponseType
+```
+
+
+#### `responseTypeToString`
+
+``` purescript
+responseTypeToString :: ResponseType -> String
+```
+
+
+#### `ResponseContent`
+
+``` purescript
+type ResponseContent = Foreign
+```
+
+Type representing content types that be received from an XHR request
+(Blob, Document, JSON, String).
+
+#### `Respondable`
+
+``` purescript
+class Respondable a where
+  responseType :: Proxy a -> ResponseType
+  fromResponse :: ResponseContent -> F a
+```
+
+
+#### `responsableBlob`
+
+``` purescript
+instance responsableBlob :: Respondable Blob
+```
+
+
+#### `responsableDocument`
+
+``` purescript
+instance responsableDocument :: Respondable Document
+```
+
+
+#### `responsableJSON`
+
+``` purescript
+instance responsableJSON :: Respondable Foreign
+```
+
+
+#### `responsableString`
+
+``` purescript
+instance responsableString :: Respondable String
+```
+
+
+#### `responsableUnit`
+
+``` purescript
+instance responsableUnit :: Respondable Unit
+```
+
+
+
+

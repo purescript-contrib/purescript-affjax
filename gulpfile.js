@@ -24,11 +24,24 @@ gulp.task("jsvalidate", ["make"], function () {
     .pipe(jsvalidate());
 });
 
-gulp.task("docs", function () {
-  return gulp.src("src/**/*.purs")
-    .pipe(plumber())
-    .pipe(purescript.pscDocs())
-    .pipe(gulp.dest("README.md"));
-});
+var docTasks = [];
+
+var docTask = function(name) {
+  var taskName = "docs-" + name.toLowerCase();
+  gulp.task(taskName, function () {
+    return gulp.src("src/" + name.replace(/\./g, "/") + ".purs")
+      .pipe(plumber())
+      .pipe(purescript.pscDocs())
+      .pipe(gulp.dest("docs/" + name + ".md"));
+  });
+  docTasks.push(taskName);
+};
+
+["Network.HTTP.Affjax", "Network.HTTP.Affjax.Request", "Network.HTTP.Affjax.Response",
+ "Network.HTTP.Method", "Network.HTTP.MimeType", "Network.HTTP.MimeType.Common",
+ "Network.HTTP.RequestHeader", "Network.HTTP.ResponseHeader",
+ "Network.HTTP.StatusCode"].forEach(docTask);
+
+gulp.task("docs", docTasks);
 
 gulp.task("default", ["jsvalidate", "docs", "make-test"]);
