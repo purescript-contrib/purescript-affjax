@@ -66,19 +66,19 @@ type AffjaxResponse a =
 type URL = String
 
 -- | Makes an `Affjax` request.
-affjax :: forall e a b. (Requestable a, Responsable b) => AffjaxRequest a -> Affjax e b
+affjax :: forall e a b. (Requestable a, Respondable b) => AffjaxRequest a -> Affjax e b
 affjax = makeAff' <<< affjax'
 
 -- | Makes a `GET` request to the specified URL.
-get :: forall e a. (Responsable a) => URL -> Affjax e a
+get :: forall e a. (Respondable a) => URL -> Affjax e a
 get u = affjax $ defaultRequest { url = u }
 
 -- | Makes a `POST` request to the specified URL, sending data.
-post :: forall e a b. (Requestable a, Responsable b) => URL -> a -> Affjax e b
+post :: forall e a b. (Requestable a, Respondable b) => URL -> a -> Affjax e b
 post u c = affjax $ defaultRequest { method = POST, url = u, content = Just c }
 
 -- | Makes a `POST` request to the specified URL with the option to send data.
-post' :: forall e a b. (Requestable a, Responsable b) => URL -> Maybe a -> Affjax e b
+post' :: forall e a b. (Requestable a, Respondable b) => URL -> Maybe a -> Affjax e b
 post' u c = affjax $ defaultRequest { method = POST, url = u, content = c }
 
 -- | Makes a `POST` request to the specified URL, sending data and ignoring the
@@ -92,11 +92,11 @@ post_' :: forall e a. (Requestable a) => URL -> Maybe a -> Affjax e Unit
 post_' = post'
 
 -- | Makes a `PUT` request to the specified URL, sending data.
-put :: forall e a b. (Requestable a, Responsable b) => URL -> a -> Affjax e b
+put :: forall e a b. (Requestable a, Respondable b) => URL -> a -> Affjax e b
 put u c = affjax $ defaultRequest { method = PUT, url = u, content = Just c }
 
 -- | Makes a `PUT` request to the specified URL with the option to send data.
-put' :: forall e a b. (Requestable a, Responsable b) => URL -> Maybe a -> Affjax e b
+put' :: forall e a b. (Requestable a, Respondable b) => URL -> Maybe a -> Affjax e b
 put' u c = affjax $ defaultRequest { method = PUT, url = u, content = c }
 
 -- | Makes a `PUT` request to the specified URL, sending data and ignoring the
@@ -110,7 +110,7 @@ put_' :: forall e a. (Requestable a) => URL -> Maybe a -> Affjax e Unit
 put_' = put'
 
 -- | Makes a `DELETE` request to the specified URL.
-delete :: forall e a. (Responsable a) => URL -> Affjax e a
+delete :: forall e a. (Respondable a) => URL -> Affjax e a
 delete u = affjax $ defaultRequest { method = DELETE, url = u }
 
 -- | Makes a `DELETE` request to the specified URL and ignores the response.
@@ -118,7 +118,7 @@ delete_ :: forall e. URL -> Affjax e Unit
 delete_ = delete
 
 -- | Run a request directly without using `Aff`.
-affjax' :: forall e a b. (Requestable a, Responsable b) =>
+affjax' :: forall e a b. (Requestable a, Respondable b) =>
                          AffjaxRequest a ->
                          (Error -> Eff (ajax :: AJAX | e) Unit) ->
                          (AffjaxResponse b -> Eff (ajax :: AJAX | e) Unit) ->
