@@ -27,7 +27,6 @@ import Network.HTTP.Method (Method(..), methodToString)
 import Network.HTTP.RequestHeader (RequestHeader(), requestHeaderName, requestHeaderValue)
 import Network.HTTP.ResponseHeader (ResponseHeader(), responseHeader)
 import Network.HTTP.StatusCode (StatusCode())
-import Type.Proxy (Proxy(..))
 
 -- | The effect type for AJAX requests made with Affjax.
 foreign import data AJAX :: !
@@ -130,7 +129,7 @@ affjax' req eb cb =
          , url: req.url
          , headers: (\h -> { field: requestHeaderName h, value: requestHeaderValue h }) <$> req.headers
          , content: toNullable (toRequest <$> req.content)
-         , responseType: responseTypeToString $ responseType (Proxy :: Proxy b)
+         , responseType: responseTypeToString (responseType :: ResponseType b)
          , username: toNullable req.username
          , password: toNullable req.password
          }
