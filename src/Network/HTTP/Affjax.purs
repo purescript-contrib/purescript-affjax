@@ -23,7 +23,6 @@ import Data.Nullable (Nullable(), toNullable)
 import DOM.XHR (XMLHttpRequest())
 import Network.HTTP.Affjax.Request
 import Network.HTTP.Affjax.Response
-import Network.HTTP.Affjax.ResponseType
 import Network.HTTP.Method (Method(..), methodToString)
 import Network.HTTP.RequestHeader (RequestHeader(), requestHeaderName, requestHeaderValue)
 import Network.HTTP.ResponseHeader (ResponseHeader(), responseHeader)
