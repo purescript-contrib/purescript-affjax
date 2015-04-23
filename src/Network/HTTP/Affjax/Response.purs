@@ -1,5 +1,5 @@
 module Network.HTTP.Affjax.Response
-  ( ResponseType(), responseTypeToString
+  ( ResponseType(..), responseTypeToString
   , ResponseContent()
   , Respondable, responseType, fromResponse
   ) where
