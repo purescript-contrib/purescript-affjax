@@ -6,6 +6,11 @@
 
 ``` purescript
 data ResponseType a
+  = ArrayBufferResponse 
+  | BlobResponse 
+  | DocumentResponse 
+  | JSONResponse 
+  | StringResponse 
 ```
 
 Valid response types for an AJAX request. This is used to determine the
