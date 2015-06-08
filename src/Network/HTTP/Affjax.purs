@@ -12,11 +12,12 @@ module Network.HTTP.Affjax
   , delete, delete_
   ) where
 
+import Control.Bind ((<=<))
 import Control.Monad.Aff (Aff(), makeAff, makeAff', Canceler(..))
 import Control.Monad.Eff (Eff())
 import Control.Monad.Eff.Exception (Error(), error)
 import Data.Either (Either(..))
-import Data.Foreign (Foreign(..), F())
+import Data.Foreign (Foreign(..), F(), parseJSON, readString)
 import Data.Function (Fn5(), runFn5, Fn4(), runFn4)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (Nullable(), toNullable)
@@ -134,9 +135,13 @@ affjax' req eb cb =
          , password: toNullable req.password
          }
   cb' :: AffjaxResponse ResponseContent -> Eff (ajax :: AJAX | e) Unit
-  cb' res = case res { response = _  } <$> fromResponse res.response of
+  cb' res = case res { response = _  } <$> fromResponse' res.response of
     Left err -> eb $ error (show err)
     Right res' -> cb res'
+  fromResponse' :: ResponseContent -> F b
+  fromResponse' = case (responseType :: ResponseType b) of
+    JSONResponse -> fromResponse <=< parseJSON <=< readString
+    _ -> fromResponse
 
 type AjaxRequest =
   { method :: String

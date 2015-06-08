@@ -4,9 +4,8 @@ module Network.HTTP.Affjax.Response
   , Respondable, responseType, fromResponse
   ) where
 
-import Control.Bind ((>=>))
 import Data.Either (Either(..))
-import Data.Foreign (Foreign(), F(), readString, parseJSON, unsafeReadTagged)
+import Data.Foreign (Foreign(), F(), readString, unsafeReadTagged)
 import DOM (Document())
 import DOM.File (Blob())
 import DOM.XHR (FormData())
@@ -64,7 +63,7 @@ instance responsableDocument :: Respondable Document where
 
 instance responsableJSON :: Respondable Foreign where
   responseType = JSONResponse
-  fromResponse = readString >=> parseJSON
+  fromResponse = Right
 
 instance responsableString :: Respondable String where
   responseType = StringResponse
