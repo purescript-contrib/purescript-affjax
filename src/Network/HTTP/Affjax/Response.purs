@@ -43,7 +43,7 @@ responseTypeToString :: forall a. (ResponseType a) -> String
 responseTypeToString ArrayBufferResponse = "arraybuffer"
 responseTypeToString BlobResponse = "blob"
 responseTypeToString DocumentResponse = "document"
-responseTypeToString JSONResponse = "json"
+responseTypeToString JSONResponse = "text" -- IE doesn't support "json" responseType
 responseTypeToString StringResponse = "text"
 
 -- | Type representing content types that be received from an XHR request
@@ -64,7 +64,7 @@ instance responsableDocument :: Respondable Document where
 
 instance responsableJSON :: Respondable Foreign where
   responseType = JSONResponse
-  fromResponse = Right
+  fromResponse = readString >=> parseJSON
 
 instance responsableString :: Respondable String where
   responseType = StringResponse
