@@ -4,6 +4,7 @@ module Network.HTTP.Affjax.Response
   , Respondable, responseType, fromResponse
   ) where
 
+import Prelude
 import Data.Either (Either(..))
 import Data.Foreign (Foreign(), F(), readString, unsafeReadTagged)
 import DOM (Document())
@@ -23,13 +24,12 @@ data ResponseType a
   | StringResponse
 
 instance eqResponseType :: Eq (ResponseType a) where
-  (==) ArrayBufferResponse ArrayBufferResponse = true
-  (==) BlobResponse        BlobResponse        = true
-  (==) DocumentResponse    DocumentResponse    = true
-  (==) JSONResponse        JSONResponse        = true
-  (==) StringResponse      StringResponse      = true
-  (==) _ _ = false
-  (/=) x y = not (x == y)
+  eq ArrayBufferResponse ArrayBufferResponse = true
+  eq BlobResponse        BlobResponse        = true
+  eq DocumentResponse    DocumentResponse    = true
+  eq JSONResponse        JSONResponse        = true
+  eq StringResponse      StringResponse      = true
+  eq _ _ = false
 
 instance showResponseType :: Show (ResponseType a) where
   show ArrayBufferResponse = "ArrayBufferResponse"

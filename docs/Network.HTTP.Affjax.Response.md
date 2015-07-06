@@ -1,16 +1,14 @@
-# Module Documentation
-
 ## Module Network.HTTP.Affjax.Response
 
 #### `ResponseType`
 
 ``` purescript
 data ResponseType a
-  = ArrayBufferResponse 
-  | BlobResponse 
-  | DocumentResponse 
-  | JSONResponse 
-  | StringResponse 
+  = ArrayBufferResponse
+  | BlobResponse
+  | DocumentResponse
+  | JSONResponse
+  | StringResponse
 ```
 
 Valid response types for an AJAX request. This is used to determine the
@@ -18,26 +16,17 @@ Valid response types for an AJAX request. This is used to determine the
 type used to associate the `ResponseType` with a particular instance of
 `Respondable`.
 
-#### `eqResponseType`
-
+##### Instances
 ``` purescript
 instance eqResponseType :: Eq (ResponseType a)
-```
-
-
-#### `showResponseType`
-
-``` purescript
 instance showResponseType :: Show (ResponseType a)
 ```
-
 
 #### `responseTypeToString`
 
 ``` purescript
 responseTypeToString :: forall a. ResponseType a -> String
 ```
-
 
 #### `ResponseContent`
 
@@ -56,41 +45,13 @@ class Respondable a where
   fromResponse :: ResponseContent -> F a
 ```
 
-
-#### `responsableBlob`
-
+##### Instances
 ``` purescript
 instance responsableBlob :: Respondable Blob
-```
-
-
-#### `responsableDocument`
-
-``` purescript
 instance responsableDocument :: Respondable Document
-```
-
-
-#### `responsableJSON`
-
-``` purescript
 instance responsableJSON :: Respondable Foreign
-```
-
-
-#### `responsableString`
-
-``` purescript
 instance responsableString :: Respondable String
-```
-
-
-#### `responsableUnit`
-
-``` purescript
 instance responsableUnit :: Respondable Unit
 ```
-
-
 
 

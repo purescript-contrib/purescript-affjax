@@ -19,11 +19,14 @@
     "package.json"
   ],
   "dependencies": {
-    "purescript-aff": "~0.10.1",
-    "purescript-arraybuffer-types": "~0.1.1",
+    "purescript-aff": "~0.11.0",
+    "purescript-arraybuffer-types": "~0.2.0",
     "purescript-dom": "~0.1.2",
-    "purescript-foreign": "~0.4.2",
-    "purescript-integers": "~0.1.0",
-    "purescript-nullable": "~0.1.1"
+    "purescript-foreign": "~0.5.0",
+    "purescript-integers": "~0.2.0",
+    "purescript-nullable": "~0.2.0"
+  },
+  "devDependencies": {
+    "purescript-console": "~0.1.0"
   }
 }

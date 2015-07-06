@@ -1,5 +1,3 @@
-# Module Documentation
-
 ## Module Network.HTTP.MimeType.Common
 
 #### `applicationFormURLEncoded`
@@ -8,13 +6,11 @@
 applicationFormURLEncoded :: MimeType
 ```
 
-
 #### `applicationJSON`
 
 ``` purescript
 applicationJSON :: MimeType
 ```
-
 
 #### `applicationJavascript`
 
@@ -22,13 +18,11 @@ applicationJSON :: MimeType
 applicationJavascript :: MimeType
 ```
 
-
 #### `applicationOctetStream`
 
 ``` purescript
 applicationOctetStream :: MimeType
 ```
-
 
 #### `applicationXML`
 
@@ -36,13 +30,11 @@ applicationOctetStream :: MimeType
 applicationXML :: MimeType
 ```
 
-
 #### `imageGIF`
 
 ``` purescript
 imageGIF :: MimeType
 ```
-
 
 #### `imageJPEG`
 
@@ -50,13 +42,11 @@ imageGIF :: MimeType
 imageJPEG :: MimeType
 ```
 
-
 #### `imagePNG`
 
 ``` purescript
 imagePNG :: MimeType
 ```
-
 
 #### `multipartFormData`
 
@@ -64,13 +54,11 @@ imagePNG :: MimeType
 multipartFormData :: MimeType
 ```
 
-
 #### `textCSV`
 
 ``` purescript
 textCSV :: MimeType
 ```
-
 
 #### `textHTML`
 
@@ -78,20 +66,16 @@ textCSV :: MimeType
 textHTML :: MimeType
 ```
 
-
 #### `textPlain`
 
 ``` purescript
 textPlain :: MimeType
 ```
 
-
 #### `textXML`
 
 ``` purescript
 textXML :: MimeType
 ```
-
-
 
 

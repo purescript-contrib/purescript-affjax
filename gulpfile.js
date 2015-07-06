@@ -5,43 +5,56 @@ var plumber = require("gulp-plumber");
 var purescript = require("gulp-purescript");
 var jsvalidate = require("gulp-jsvalidate");
 
-gulp.task("make", function() {
-  return gulp.src(["src/**/*.purs", "bower_components/purescript-*/src/**/*.purs"])
-    .pipe(plumber())
-    .pipe(purescript.pscMake());
-});
+var sources = [
+  'src/**/*.purs',
+  'bower_components/purescript-*/src/**/*.purs',
+  'test/**/*.purs'
+];
 
-gulp.task("make-test", function() {
-  return gulp.src(["src/**/*.purs", "test/**/*.purs", "bower_components/purescript-*/src/**/*.purs"])
-    .pipe(plumber())
-    .pipe(purescript.psc({ main: "Test.Main", output: "test.js" }))
-    .pipe(gulp.dest("tmp/"));
-});
+var foreigns = [
+  'src/**/*.js',
+  'bower_components/purescript-*/src/**/*.js',
+  'test/**/*.js'
+];
 
-gulp.task("jsvalidate", ["make"], function () {
-  return gulp.src("output/**/*.js")
+gulp.task('jsvalidate', function() {
+  return gulp.src(foreigns)
     .pipe(plumber())
     .pipe(jsvalidate());
 });
 
-var docTasks = [];
-
-var docTask = function(name) {
-  var taskName = "docs-" + name.toLowerCase();
-  gulp.task(taskName, function () {
-    return gulp.src("src/" + name.replace(/\./g, "/") + ".purs")
-      .pipe(plumber())
-      .pipe(purescript.pscDocs())
-      .pipe(gulp.dest("docs/" + name + ".md"));
+gulp.task('psc', function() {
+  return purescript.psc({
+    src: sources,
+    ffi: foreigns
   });
-  docTasks.push(taskName);
-};
+});
 
-["Network.HTTP.Affjax", "Network.HTTP.Affjax.Request", "Network.HTTP.Affjax.Response",
- "Network.HTTP.Method", "Network.HTTP.MimeType", "Network.HTTP.MimeType.Common",
- "Network.HTTP.RequestHeader", "Network.HTTP.ResponseHeader",
- "Network.HTTP.StatusCode"].forEach(docTask);
+gulp.task('pscBundle', function() {
+  return purescript.pscBundle({
+    src: 'output/**/*.js',
+    output: 'tmp/test.js',
+    main: 'Test.Main'
+  });
+});
 
-gulp.task("docs", docTasks);
+gulp.task('pscDocs', function() {
+  return purescript.pscDocs({
+    src: sources,
+    docgen: {
+      'Network.HTTP.Affjax': 'docs/Network.HTTP.Affjax.md',
+      'Network.HTTP.Affjax.Request': 'docs/Network.HTTP.Affjax.Request.md',
+      'Network.HTTP.Affjax.Response': 'docs/Network.HTTP.Affjax.Response.md',
+      'Network.HTTP.Method': 'docs/Network.HTTP.Method.md',
+      'Network.HTTP.MimeType': 'docs/Network.HTTP.MimeType.md',
+      'Network.HTTP.MimeType.Common': 'docs/Network.HTTP.MimeType.Common.md',
+      'Network.HTTP.RequestHeader': 'docs/Network.HTTP.RequestHeader.md',
+      'Network.HTTP.ResponseHeader': 'docs/Network.HTTP.ResponseHeader.md',
+      'Network.HTTP.StatusCode': 'docs/Network.HTTP.StatusCode.md'
+    }
+  })
+});
 
-gulp.task("default", ["jsvalidate", "docs", "make-test"]);
+gulp.task('make', ['jsvalidate', 'psc', 'pscDocs']);
+gulp.task('test', ['jsvalidate', 'psc', 'pscBundle', 'pscDocs']);
+gulp.task('default', ['make']);

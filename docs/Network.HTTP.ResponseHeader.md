@@ -1,5 +1,3 @@
-# Module Documentation
-
 ## Module Network.HTTP.ResponseHeader
 
 #### `ResponseHeader`
@@ -8,27 +6,16 @@
 data ResponseHeader
 ```
 
+##### Instances
+``` purescript
+instance eqResponseHeader :: Eq ResponseHeader
+instance showResponseHeader :: Show ResponseHeader
+```
 
 #### `responseHeader`
 
 ``` purescript
 responseHeader :: String -> String -> ResponseHeader
 ```
-
-
-#### `eqResponseHeader`
-
-``` purescript
-instance eqResponseHeader :: Eq ResponseHeader
-```
-
-
-#### `showResponseHeader`
-
-``` purescript
-instance showResponseHeader :: Show ResponseHeader
-```
-
-
 
 

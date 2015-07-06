@@ -1,5 +1,7 @@
 module Network.HTTP.RequestHeader where
 
+import Prelude
+
 import Network.HTTP.MimeType
 
 data RequestHeader
@@ -8,11 +10,10 @@ data RequestHeader
   | RequestHeader String String
 
 instance eqRequestHeader :: Eq RequestHeader where
-  (==) (Accept m1) (Accept m2) = m1 == m2
-  (==) (ContentType m1) (ContentType m2) = m1 == m2
-  (==) (RequestHeader h1 v1) (RequestHeader h2 v2) = h1 == h2 && v1 == v2
-  (==) _ _ = false
-  (/=) x y = not (x == y)
+  eq (Accept m1) (Accept m2) = m1 == m2
+  eq (ContentType m1) (ContentType m2) = m1 == m2
+  eq (RequestHeader h1 v1) (RequestHeader h2 v2) = h1 == h2 && v1 == v2
+  eq _ _ = false
 
 instance showRequestHeader :: Show RequestHeader where
   show (Accept m) = "(Accept " ++ show m ++ ")"

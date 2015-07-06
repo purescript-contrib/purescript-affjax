@@ -1,5 +1,3 @@
-# Module Documentation
-
 ## Module Network.HTTP.RequestHeader
 
 #### `RequestHeader`
@@ -11,20 +9,11 @@ data RequestHeader
   | RequestHeader String String
 ```
 
-
-#### `eqRequestHeader`
-
+##### Instances
 ``` purescript
 instance eqRequestHeader :: Eq RequestHeader
-```
-
-
-#### `showRequestHeader`
-
-``` purescript
 instance showRequestHeader :: Show RequestHeader
 ```
-
 
 #### `requestHeaderName`
 
@@ -32,13 +21,10 @@ instance showRequestHeader :: Show RequestHeader
 requestHeaderName :: RequestHeader -> String
 ```
 
-
 #### `requestHeaderValue`
 
 ``` purescript
 requestHeaderValue :: RequestHeader -> String
 ```
-
-
 
 
