@@ -7,6 +7,10 @@
     "ajax"
   ],
   "license": "Apache 2.0",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/slamdata/purescript-affjax.git"
+  },
   "ignore": [
     "**/.*",
     "bower_components",
@@ -19,14 +23,15 @@
     "package.json"
   ],
   "dependencies": {
-    "purescript-aff": "~0.11.0",
-    "purescript-arraybuffer-types": "~0.2.0",
-    "purescript-dom": "~0.1.2",
-    "purescript-foreign": "~0.5.0",
-    "purescript-integers": "~0.2.0",
-    "purescript-nullable": "~0.2.0"
+    "purescript-aff": "^0.11.0",
+    "purescript-arraybuffer-types": "^0.2.0",
+    "purescript-dom": "^0.1.2",
+    "purescript-foreign": "^0.5.0",
+    "purescript-integers": "^0.2.0",
+    "purescript-nullable": "^0.2.0",
+    "purescript-unsafe-coerce": "^0.1.0"
   },
   "devDependencies": {
-    "purescript-console": "~0.1.0"
+    "purescript-console": "^0.1.0"
   }
 }

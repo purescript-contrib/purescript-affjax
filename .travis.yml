@@ -1,12 +1,14 @@
 language: node_js
+sudo: false
 node_js:
   - 0.10
 env:
-  - TAG=v0.7.0
+  - TAG=v0.7.0 PATH=$HOME/bin:$PATH
 install:
+  - mkdir $HOME/bin
   - wget -O $HOME/purescript.tar.gz https://github.com/purescript/purescript/releases/download/$TAG/linux64.tar.gz
-  - sudo tar zxvf $HOME/purescript.tar.gz -C /usr/local/bin purescript/psc{,i,-docs,-bundle,-publish} --strip-components=1
-  - sudo chmod a+x /usr/local/bin/psc{,i,-docs,-bundle,-publish}
+  - tar zxvf $HOME/purescript.tar.gz -C $HOME/bin purescript/psc{,i,-docs,-bundle,-publish} --strip-components=1
+  - chmod a+x $HOME/bin/psc{,i,-docs,-bundle,-publish}
   - npm install bower gulp -g
   - npm install && bower install
 script:

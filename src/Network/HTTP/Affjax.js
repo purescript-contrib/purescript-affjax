@@ -1,17 +1,20 @@
+/* jshint browser: true */
+/* global exports */
 "use strict";
 
 // module Network.HTTP.Affjax
 
-exports._ajax = function(mkHeader, options, canceler, errback, callback) {
+// jshint maxparams: 5
+exports._ajax = function (mkHeader, options, canceler, errback, callback) {
   return function () {
     var xhr = new XMLHttpRequest();
     xhr.open(options.method || "GET", options.url || "/", true, options.username, options.password);
     if (options.headers) {
-      for (var i = 0, header; header = options.headers[i]; i++) {
+      for (var i = 0, header; (header = options.headers[i]) != null; i++) {
         xhr.setRequestHeader(header.field, header.value);
       }
     }
-    xhr.onerror = function (err) {
+    xhr.onerror = function () {
       errback(new Error("AJAX request failed: " + options.method + " " + options.url))();
     };
     xhr.onload = function () {
@@ -32,9 +35,10 @@ exports._ajax = function(mkHeader, options, canceler, errback, callback) {
     xhr.send(options.content);
     return canceler(xhr);
   };
-}
+};
 
-exports._cancelAjax = function(xhr, cancelError, errback, callback) {
+// jshint maxparams: 4
+exports._cancelAjax = function (xhr, cancelError, errback, callback) {
   return function () {
     try { xhr.abort(); } catch (e) { return callback(false)(); }
     return callback(true)();

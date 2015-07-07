@@ -2,7 +2,8 @@
   "private": true,
   "devDependencies": {
     "gulp": "^3.8.11",
-    "gulp-jsvalidate": "^2.0.0",
+    "gulp-jscs": "^1.6.0",
+    "gulp-jshint": "^1.11.2",
     "gulp-plumber": "^1.0.0",
     "gulp-purescript": "^0.5.0"
   }
