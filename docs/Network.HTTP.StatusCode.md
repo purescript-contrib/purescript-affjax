@@ -1,5 +1,3 @@
-# Module Documentation
-
 ## Module Network.HTTP.StatusCode
 
 #### `StatusCode`
@@ -9,20 +7,10 @@ newtype StatusCode
   = StatusCode Int
 ```
 
-
-#### `eqStatusCode`
-
+##### Instances
 ``` purescript
 instance eqStatusCode :: Eq StatusCode
-```
-
-
-#### `showStatusCode`
-
-``` purescript
 instance showStatusCode :: Show StatusCode
 ```
-
-
 
 

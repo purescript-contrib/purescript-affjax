@@ -3,6 +3,7 @@ module Network.HTTP.Affjax.Request
   , Requestable, toRequest
   ) where
 
+import Prelude
 import DOM (Document())
 import DOM.File (Blob())
 import DOM.XHR (FormData())
@@ -62,9 +63,4 @@ instance requestableFormData :: Requestable FormData where
 instance requestableUnit :: Requestable Unit where
   toRequest = unsafeConversion
 
-foreign import unsafeConversion
-  """
-  function unsafeConversion (x) {
-    return x;
-  }
-  """ :: forall a b. a -> b
+foreign import unsafeConversion :: forall a b. a -> b

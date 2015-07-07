@@ -1,5 +1,7 @@
 module Network.HTTP.Method where
 
+import Prelude
+
 data Method
   = DELETE
   | GET
@@ -13,17 +15,16 @@ data Method
   | CustomMethod String
 
 instance eqMethod :: Eq Method where
-  (==) DELETE  DELETE  = true
-  (==) GET     GET     = true
-  (==) HEAD    HEAD    = true
-  (==) OPTIONS OPTIONS = true
-  (==) PATCH   PATCH   = true
-  (==) POST    POST    = true
-  (==) PUT     PUT     = true
-  (==) MOVE    MOVE    = true
-  (==) COPY    COPY     = true
-  (==) _       _       = false
-  (/=) x y = not (x == y)
+  eq DELETE  DELETE  = true
+  eq GET     GET     = true
+  eq HEAD    HEAD    = true
+  eq OPTIONS OPTIONS = true
+  eq PATCH   PATCH   = true
+  eq POST    POST    = true
+  eq PUT     PUT     = true
+  eq MOVE    MOVE    = true
+  eq COPY    COPY     = true
+  eq _       _       = false
 
 instance showMethod :: Show Method where
   show DELETE  = "DELETE"

@@ -12,6 +12,7 @@ module Network.HTTP.Affjax
   , delete, delete_
   ) where
 
+import Prelude
 import Control.Bind ((<=<))
 import Control.Monad.Aff (Aff(), makeAff, makeAff', Canceler(..))
 import Control.Monad.Eff (Eff())
@@ -38,7 +39,7 @@ type Affjax e a = Aff (ajax :: AJAX | e) (AffjaxResponse a)
 type AffjaxRequest a =
   { method :: Method
   , url :: URL
-  , headers :: [RequestHeader]
+  , headers :: Array RequestHeader
   , content :: Maybe a
   , username :: Maybe String
   , password :: Maybe String
@@ -57,7 +58,7 @@ defaultRequest =
 -- | The type of records that will be received as an Affjax response.
 type AffjaxResponse a =
   { status :: StatusCode
-  , headers :: [ResponseHeader]
+  , headers :: Array ResponseHeader
   , response :: a
   }
 
@@ -146,7 +147,7 @@ affjax' req eb cb =
 type AjaxRequest =
   { method :: String
   , url :: URL
-  , headers :: [{ field :: String, value :: String }]
+  , headers :: Array { field :: String, value :: String }
   , content :: Nullable RequestContent
   , responseType :: String
   , username :: Nullable String
@@ -154,58 +155,20 @@ type AjaxRequest =
   }
 
 foreign import _ajax
-  """
-  function _ajax (mkHeader, options, canceler, errback, callback) {
-    return function () {
-      var xhr = new XMLHttpRequest();
-      xhr.open(options.method || "GET", options.url || "/", true, options.username, options.password);
-      if (options.headers) {
-        for (var i = 0, header; header = options.headers[i]; i++) {
-          xhr.setRequestHeader(header.field, header.value);
-        }
-      }
-      xhr.onerror = function (err) {
-        errback(new Error("AJAX request failed: " + options.method + " " + options.url))();
-      };
-      xhr.onload = function () {
-        callback({
-          status: xhr.status,
-          headers: xhr.getAllResponseHeaders().split("\n")
-            .filter(function (header) {
-              return header.length > 0;
-            })
-            .map(function (header) {
-              var i = header.indexOf(":");
-              return mkHeader(header.substring(0, i))(header.substring(i + 2));
-            }),
-          response: xhr.response
-        })();
-      };
-      xhr.responseType = options.responseType;
-      xhr.send(options.content);
-      return canceler(xhr);
-    };
-  }
-  """ :: forall e a. Fn5 (String -> String -> ResponseHeader)
-                     AjaxRequest
-                     (XMLHttpRequest -> Canceler (ajax :: AJAX | e))
-                     (Error -> Eff (ajax :: AJAX | e) Unit)
-                     (AffjaxResponse Foreign -> Eff (ajax :: AJAX | e) Unit)
-                     (Eff (ajax :: AJAX | e) (Canceler (ajax :: AJAX | e)))
+  :: forall e a. Fn5 (String -> String -> ResponseHeader)
+                 AjaxRequest
+                 (XMLHttpRequest -> Canceler (ajax :: AJAX | e))
+                 (Error -> Eff (ajax :: AJAX | e) Unit)
+                 (AffjaxResponse Foreign -> Eff (ajax :: AJAX | e) Unit)
+                 (Eff (ajax :: AJAX | e) (Canceler (ajax :: AJAX | e)))
 
 cancelAjax :: forall e. XMLHttpRequest -> Canceler (ajax :: AJAX | e)
 cancelAjax xhr = Canceler \err -> makeAff (\eb cb -> runFn4 _cancelAjax xhr err eb cb)
 
 foreign import _cancelAjax
-  """
-  function _cancelAjax (xhr, cancelError, errback, callback) {
-    return function () {
-      try { xhr.abort(); } catch (e) { return callback(false)(); }
-      return callback(true)();
-    };
-  };
-  """ :: forall e. Fn4 XMLHttpRequest
-                       Error
-                       (Error -> Eff (ajax :: AJAX | e) Unit)
-                       (Boolean -> Eff (ajax :: AJAX | e) Unit)
-                       (Eff (ajax :: AJAX | e) Unit)
+  :: forall e. Fn4 XMLHttpRequest
+                   Error
+                   (Error -> Eff (ajax :: AJAX | e) Unit)
+                   (Boolean -> Eff (ajax :: AJAX | e) Unit)
+                   (Eff (ajax :: AJAX | e) Unit)
+

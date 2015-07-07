@@ -1,5 +1,3 @@
-# Module Documentation
-
 ## Module Network.HTTP.MimeType
 
 #### `MimeType`
@@ -9,27 +7,16 @@ newtype MimeType
   = MimeType String
 ```
 
-
-#### `eqMimeType`
-
+##### Instances
 ``` purescript
 instance eqMimeType :: Eq MimeType
-```
-
-
-#### `showMimeType`
-
-``` purescript
 instance showMimeType :: Show MimeType
 ```
-
 
 #### `mimeTypeToString`
 
 ``` purescript
 mimeTypeToString :: MimeType -> String
 ```
-
-
 
 

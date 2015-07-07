@@ -1,5 +1,3 @@
-# Module Documentation
-
 ## Module Network.HTTP.Affjax
 
 #### `AJAX`
@@ -21,9 +19,8 @@ The type for Affjax requests.
 #### `AffjaxRequest`
 
 ``` purescript
-type AffjaxRequest a = { password :: Maybe String, username :: Maybe String, content :: Maybe a, headers :: [RequestHeader], url :: URL, method :: Method }
+type AffjaxRequest a = { method :: Method, url :: URL, headers :: Array RequestHeader, content :: Maybe a, username :: Maybe String, password :: Maybe String }
 ```
-
 
 #### `defaultRequest`
 
@@ -31,11 +28,10 @@ type AffjaxRequest a = { password :: Maybe String, username :: Maybe String, con
 defaultRequest :: AffjaxRequest Unit
 ```
 
-
 #### `AffjaxResponse`
 
 ``` purescript
-type AffjaxResponse a = { response :: a, headers :: [ResponseHeader], status :: StatusCode }
+type AffjaxResponse a = { status :: StatusCode, headers :: Array ResponseHeader, response :: a }
 ```
 
 The type of records that will be received as an Affjax response.
@@ -155,6 +151,5 @@ affjax' :: forall e a b. (Requestable a, Respondable b) => AffjaxRequest a -> (E
 ```
 
 Run a request directly without using `Aff`.
-
 
 
