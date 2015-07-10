@@ -1,6 +1,8 @@
 module Network.HTTP.ResponseHeader
   ( ResponseHeader()
   , responseHeader
+  , responseHeaderName
+  , responseHeaderValue
   ) where
 
 import Prelude
@@ -16,3 +18,9 @@ instance eqResponseHeader :: Eq ResponseHeader where
 
 instance showResponseHeader :: Show ResponseHeader where
   show (ResponseHeader h v) = "(ResponseHeader " ++ show h ++ " " ++ show v ++ ")"
+
+responseHeaderName :: ResponseHeader -> String
+responseHeaderName (ResponseHeader h _) = h
+
+responseHeaderValue :: ResponseHeader -> String
+responseHeaderValue (ResponseHeader _ v) = v

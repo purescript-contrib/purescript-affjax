@@ -18,4 +18,16 @@ instance showResponseHeader :: Show ResponseHeader
 responseHeader :: String -> String -> ResponseHeader
 ```
 
+#### `responseHeaderName`
+
+``` purescript
+responseHeaderName :: ResponseHeader -> String
+```
+
+#### `responseHeaderValue`
+
+``` purescript
+responseHeaderValue :: ResponseHeader -> String
+```
+
 
