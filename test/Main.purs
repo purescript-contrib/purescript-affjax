@@ -59,8 +59,6 @@ main = runAff throwException (const $ log "affjax: All good!") $ do
   let ok200 = StatusCode 200
   let notFound404 = StatusCode 404
 
-  assertFail "lol"
-
   A.log "GET /mirror: should be 200 OK"
   (attempt $ affjax $ defaultRequest { url = "/mirror" }) >>= assertRight >>= \res -> do
     typeIs (res :: AffjaxResponse Foreign)
