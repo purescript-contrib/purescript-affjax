@@ -28,7 +28,7 @@ import Data.Int (toNumber, round)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (Nullable(), toNullable)
 import DOM.XHR (XMLHttpRequest())
-import Math (pow)
+import Math (max, pow)
 import Network.HTTP.Affjax.Request
 import Network.HTTP.Affjax.Response
 import Network.HTTP.Method (Method(..), methodToString)
@@ -148,6 +148,9 @@ retry milliseconds run req = do
         StatusCode 200 -> Right resp
         _ -> Left resp
 
+    -- maximum delay in milliseconds
+    maxDelay = 30.0 * 1000.0
+
     go failureVar n = do
       result <- run req
       case assert200 result of
@@ -155,7 +158,7 @@ retry milliseconds run req = do
         Left resp -> do
           putVar failureVar resp
           -- TODO: is this too steep?
-          let delay = round $ toNumber 1000 * pow (toNumber 2) (toNumber (n - 1))
+          let delay = round $ max maxDelay $ 1000.0 * (pow 2.0 $ toNumber (n - 1))
           later' delay $ go failureVar (n + 1)
 
 -- | Run a request directly without using `Aff`.
