@@ -157,8 +157,7 @@ retry milliseconds run req = do
         Right b -> pure b
         Left resp -> do
           putVar failureVar resp
-          -- TODO: is this too steep?
-          let delay = round $ max maxDelay $ 1000.0 * (pow 2.0 $ toNumber (n - 1))
+          let delay = round $ max maxDelay $ 100.0 * (pow 2.0 $ toNumber (n - 1))
           later' delay $ go failureVar (n + 1)
 
 -- | Run a request directly without using `Aff`.
