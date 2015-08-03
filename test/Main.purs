@@ -51,13 +51,18 @@ assertEq x y = if x == y
                  then return unit
                  else assertFail $ "Expected " <> show x <> ", got " <> show y
 
--- | For helping type inference 
+-- | For helping type inference
 typeIs :: forall e a. a -> Assert e Unit
 typeIs = const (return unit)
 
 main = runAff throwException (const $ log "affjax: All good!") $ do
   let ok200 = StatusCode 200
   let notFound404 = StatusCode 404
+
+  A.log "GET /does-not-exists: should be 404 Not found after retries"
+  (attempt $ retry (Just 5000) affjax $ defaultRequest { url = "/does-not-exist" }) >>= assertRight >>= \res -> do
+    typeIs (res :: AffjaxResponse String)
+    assertEq notFound404 res.status
 
   A.log "GET /mirror: should be 200 OK"
   (attempt $ affjax $ defaultRequest { url = "/mirror" }) >>= assertRight >>= \res -> do
