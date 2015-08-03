@@ -144,6 +144,14 @@ delete_ :: forall e. URL -> Affjax e Unit
 
 Makes a `DELETE` request to the specified URL and ignores the response.
 
+#### `retry`
+
+``` purescript
+retry :: forall e a b. (Requestable a) => Maybe Int -> (AffjaxRequest a -> Affjax (avar :: AVAR | e) b) -> AffjaxRequest a -> Affjax (avar :: AVAR | e) b
+```
+
+Retry a request with exponential backoff, timing out optionally after a specified number of milliseconds.
+
 #### `affjax'`
 
 ``` purescript

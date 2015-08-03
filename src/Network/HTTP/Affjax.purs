@@ -10,25 +10,32 @@ module Network.HTTP.Affjax
   , post, post_, post', post_'
   , put, put_, put', put_'
   , delete, delete_
+  , retry
   ) where
 
 import Prelude
+import Control.Alt ((<|>))
 import Control.Bind ((<=<))
-import Control.Monad.Aff (Aff(), makeAff, makeAff', Canceler(..))
+import Control.Monad.Aff (Aff(), makeAff, makeAff', Canceler(..), attempt, later', forkAff, cancel)
+import Control.Monad.Aff.Par (Par(..), runPar)
+import Control.Monad.Aff.AVar (AVAR(), makeVar, makeVar', takeVar, putVar)
 import Control.Monad.Eff (Eff())
 import Control.Monad.Eff.Exception (Error(), error)
+import Control.Monad.Error.Class (throwError)
 import Data.Either (Either(..))
 import Data.Foreign (Foreign(..), F(), parseJSON, readString)
 import Data.Function (Fn5(), runFn5, Fn4(), runFn4)
+import Data.Int (toNumber, round)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (Nullable(), toNullable)
 import DOM.XHR (XMLHttpRequest())
+import Math (pow)
 import Network.HTTP.Affjax.Request
 import Network.HTTP.Affjax.Response
 import Network.HTTP.Method (Method(..), methodToString)
 import Network.HTTP.RequestHeader (RequestHeader(), requestHeaderName, requestHeaderValue)
 import Network.HTTP.ResponseHeader (ResponseHeader(), responseHeader)
-import Network.HTTP.StatusCode (StatusCode())
+import Network.HTTP.StatusCode (StatusCode(..))
 
 -- | The effect type for AJAX requests made with Affjax.
 foreign import data AJAX :: !
@@ -116,6 +123,41 @@ delete u = affjax $ defaultRequest { method = DELETE, url = u }
 -- | Makes a `DELETE` request to the specified URL and ignores the response.
 delete_ :: forall e. URL -> Affjax e Unit
 delete_ = delete
+
+-- | Retry a request with exponential backoff, timing out optionally after a specified number of milliseconds.
+retry :: forall e a b. (Requestable a) => Maybe Int -> (AffjaxRequest a -> Affjax (avar :: AVAR | e) b) -> (AffjaxRequest a -> Affjax (avar :: AVAR | e) b)
+retry milliseconds run req = do
+  failureVar <- makeVar
+  let loop = go failureVar
+  case milliseconds of
+    Nothing -> loop 1
+    Just milliseconds -> do
+      respVar <- makeVar
+      loopHandle <- forkAff $ loop 1 >>= putVar respVar <<< Just
+      timeoutHandle <-
+        forkAff <<< later' milliseconds $ do
+          putVar respVar Nothing
+          loopHandle `cancel` error "Cancel"
+      result <- takeVar respVar
+      case result of
+        Nothing ->
+          takeVar failureVar
+        Just resp -> pure resp
+  where
+    assert200 resp =
+      case resp.status of
+        StatusCode 200 -> Right resp
+        _ -> Left resp
+
+    go failureVar n = do
+      result <- run req
+      case assert200 result of
+        Right b -> pure b
+        Left resp -> do
+          putVar failureVar resp
+          -- TODO: is this too steep?
+          let delay = round $ toNumber 1000 * pow (toNumber 2) (toNumber (n - 1))
+          later' delay $ go failureVar (n + 1)
 
 -- | Run a request directly without using `Aff`.
 affjax' :: forall e a b. (Requestable a, Respondable b) =>
