@@ -21,7 +21,8 @@ import Control.Monad.Aff.Par (Par(..), runPar)
 import Control.Monad.Aff.AVar (AVAR(), makeVar, takeVar, putVar)
 import Control.Monad.Eff (Eff())
 import Control.Monad.Eff.Exception (Error(), error)
-import Data.Either (Either(..))
+import Control.Monad.Error.Class (throwError)
+import Data.Either (Either(..), either)
 import Data.Foreign (Foreign(..), F(), parseJSON, readString)
 import Data.Function (Fn5(), runFn5, Fn4(), runFn4)
 import Data.Int (toNumber, round)
@@ -123,9 +124,13 @@ delete u = affjax $ defaultRequest { method = DELETE, url = u }
 delete_ :: forall e. URL -> Affjax e Unit
 delete_ = delete
 
--- | Retry a request with exponential backoff, timing out optionally after a specified number of milliseconds.
+-- | Either we have a failure (which may be an exception or a failed response), or we have a successful response.
+type RetryState e a = Either (Either e a) a
+
+-- | Retry a request with exponential backoff, timing out optionally after a specified number of milliseconds. After the timeout, the last received response is returned; if it was not possible to communicate with the server due to an error, then this is bubbled up.
 retry :: forall e a b. (Requestable a) => Maybe Int -> (AffjaxRequest a -> Affjax (avar :: AVAR | e) b) -> (AffjaxRequest a -> Affjax (avar :: AVAR | e) b)
 retry milliseconds run req = do
+  -- failureVar is either an exception or a failed request
   failureVar <- makeVar
   let loop = go failureVar
   case milliseconds of
@@ -139,26 +144,29 @@ retry milliseconds run req = do
           loopHandle `cancel` error "Cancel"
       result <- takeVar respVar
       case result of
-        Nothing ->
-          takeVar failureVar
+        Nothing -> takeVar failureVar >>= either throwError pure
         Just resp -> pure resp
   where
-    assert200 resp =
+    -- delay at attempt #n with exponential backoff
+    delay n = round $ max maxDelay $ 100.0 * (pow 2.0 $ toNumber (n - 1))
+      where
+        -- maximum delay in milliseconds
+        maxDelay = 30.0 * 1000.0
+
+    retryState :: Either _ _ -> RetryState _ _
+    retryState (Left exn) = Left $ Left exn
+    retryState (Right resp) =
       case resp.status of
         StatusCode 200 -> Right resp
-        _ -> Left resp
-
-    -- maximum delay in milliseconds
-    maxDelay = 30.0 * 1000.0
+        _ -> Left (Right resp)
 
     go failureVar n = do
-      result <- run req
-      case assert200 result of
-        Right b -> pure b
-        Left resp -> do
-          putVar failureVar resp
-          let delay = round $ max maxDelay $ 100.0 * (pow 2.0 $ toNumber (n - 1))
-          later' delay $ go failureVar (n + 1)
+      result <- retryState <$> attempt (run req)
+      case result of
+        Left err -> do
+          putVar failureVar err
+          later' (delay n) $ go failureVar (n + 1)
+        Right resp -> pure resp
 
 -- | Run a request directly without using `Aff`.
 affjax' :: forall e a b. (Requestable a, Respondable b) =>

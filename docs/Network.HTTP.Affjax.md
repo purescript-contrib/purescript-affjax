@@ -150,7 +150,7 @@ Makes a `DELETE` request to the specified URL and ignores the response.
 retry :: forall e a b. (Requestable a) => Maybe Int -> (AffjaxRequest a -> Affjax (avar :: AVAR | e) b) -> AffjaxRequest a -> Affjax (avar :: AVAR | e) b
 ```
 
-Retry a request with exponential backoff, timing out optionally after a specified number of milliseconds.
+Retry a request with exponential backoff, timing out optionally after a specified number of milliseconds. After the timeout, the last received response is returned; if it was not possible to communicate with the server due to an error, then this is bubbled up.
 
 #### `affjax'`
 
