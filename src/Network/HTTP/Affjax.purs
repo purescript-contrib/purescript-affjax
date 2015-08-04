@@ -10,25 +10,32 @@ module Network.HTTP.Affjax
   , post, post_, post', post_'
   , put, put_, put', put_'
   , delete, delete_
+  , retry
   ) where
 
 import Prelude
+import Control.Alt ((<|>))
 import Control.Bind ((<=<))
-import Control.Monad.Aff (Aff(), makeAff, makeAff', Canceler(..))
+import Control.Monad.Aff (Aff(), makeAff, makeAff', Canceler(..), attempt, later', forkAff, cancel)
+import Control.Monad.Aff.Par (Par(..), runPar)
+import Control.Monad.Aff.AVar (AVAR(), makeVar, takeVar, putVar)
 import Control.Monad.Eff (Eff())
 import Control.Monad.Eff.Exception (Error(), error)
-import Data.Either (Either(..))
+import Control.Monad.Error.Class (throwError)
+import Data.Either (Either(..), either)
 import Data.Foreign (Foreign(..), F(), parseJSON, readString)
 import Data.Function (Fn5(), runFn5, Fn4(), runFn4)
+import Data.Int (toNumber, round)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (Nullable(), toNullable)
 import DOM.XHR (XMLHttpRequest())
+import Math (max, pow)
 import Network.HTTP.Affjax.Request
 import Network.HTTP.Affjax.Response
 import Network.HTTP.Method (Method(..), methodToString)
 import Network.HTTP.RequestHeader (RequestHeader(), requestHeaderName, requestHeaderValue)
 import Network.HTTP.ResponseHeader (ResponseHeader(), responseHeader)
-import Network.HTTP.StatusCode (StatusCode())
+import Network.HTTP.StatusCode (StatusCode(..))
 
 -- | The effect type for AJAX requests made with Affjax.
 foreign import data AJAX :: !
@@ -116,6 +123,50 @@ delete u = affjax $ defaultRequest { method = DELETE, url = u }
 -- | Makes a `DELETE` request to the specified URL and ignores the response.
 delete_ :: forall e. URL -> Affjax e Unit
 delete_ = delete
+
+-- | Either we have a failure (which may be an exception or a failed response), or we have a successful response.
+type RetryState e a = Either (Either e a) a
+
+-- | Retry a request with exponential backoff, timing out optionally after a specified number of milliseconds. After the timeout, the last received response is returned; if it was not possible to communicate with the server due to an error, then this is bubbled up.
+retry :: forall e a b. (Requestable a) => Maybe Int -> (AffjaxRequest a -> Affjax (avar :: AVAR | e) b) -> (AffjaxRequest a -> Affjax (avar :: AVAR | e) b)
+retry milliseconds run req = do
+  -- failureVar is either an exception or a failed request
+  failureVar <- makeVar
+  let loop = go failureVar
+  case milliseconds of
+    Nothing -> loop 1
+    Just milliseconds -> do
+      respVar <- makeVar
+      loopHandle <- forkAff $ loop 1 >>= putVar respVar <<< Just
+      timeoutHandle <-
+        forkAff <<< later' milliseconds $ do
+          putVar respVar Nothing
+          loopHandle `cancel` error "Cancel"
+      result <- takeVar respVar
+      case result of
+        Nothing -> takeVar failureVar >>= either throwError pure
+        Just resp -> pure resp
+  where
+    -- delay at attempt #n with exponential backoff
+    delay n = round $ max maxDelay $ 100.0 * (pow 2.0 $ toNumber (n - 1))
+      where
+        -- maximum delay in milliseconds
+        maxDelay = 30.0 * 1000.0
+
+    retryState :: Either _ _ -> RetryState _ _
+    retryState (Left exn) = Left $ Left exn
+    retryState (Right resp) =
+      case resp.status of
+        StatusCode 200 -> Right resp
+        _ -> Left (Right resp)
+
+    go failureVar n = do
+      result <- retryState <$> attempt (run req)
+      case result of
+        Left err -> do
+          putVar failureVar err
+          later' (delay n) $ go failureVar (n + 1)
+        Right resp -> pure resp
 
 -- | Run a request directly without using `Aff`.
 affjax' :: forall e a b. (Requestable a, Respondable b) =>
