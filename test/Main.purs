@@ -55,41 +55,47 @@ assertEq x y = if x == y
 typeIs :: forall e a. a -> Assert e Unit
 typeIs = const (return unit)
 
-main = runAff throwException (const $ log "affjax: All good!") $ do
+main = runAff (\e -> print e >>= \_ -> throwException e) (const $ log "affjax: All good!") $ do
   let ok200 = StatusCode 200
   let notFound404 = StatusCode 404
 
-  A.log "GET /does-not-exists: should be 404 Not found after retries"
-  (attempt $ retry (Just 5000) affjax $ defaultRequest { url = "/does-not-exist" }) >>= assertRight >>= \res -> do
+  -- A complete URL is necessary for tests to work on Node.js
+  let prefix = append "http://localhost:3838"
+  let mirror       = prefix "/mirror"
+  let doesNotExist = prefix "/does-not-exist"
+  let notJson      = prefix "/not-json"
+
+  A.log "GET /does-not-exist: should be 404 Not found after retries"
+  (attempt $ retry (Just 5000) affjax $ defaultRequest { url = doesNotExist }) >>= assertRight >>= \res -> do
     typeIs (res :: AffjaxResponse String)
     assertEq notFound404 res.status
 
   A.log "GET /mirror: should be 200 OK"
-  (attempt $ affjax $ defaultRequest { url = "/mirror" }) >>= assertRight >>= \res -> do
+  (attempt $ affjax $ defaultRequest { url = mirror }) >>= assertRight >>= \res -> do
     typeIs (res :: AffjaxResponse Foreign)
     assertEq ok200 res.status
 
   A.log "GET /does-not-exist: should be 404 Not found"
-  (attempt $ affjax $ defaultRequest { url = "/does-not-exist" }) >>= assertRight >>= \res -> do
+  (attempt $ affjax $ defaultRequest { url = doesNotExist }) >>= assertRight >>= \res -> do
     typeIs (res :: AffjaxResponse String)
     assertEq notFound404 res.status
 
   A.log "GET /not-json: invalid JSON with Foreign response should throw an error"
-  assertLeft =<< attempt (get "/not-json" :: Affjax _ Foreign)
+  assertLeft =<< attempt (get doesNotExist :: Affjax _ Foreign)
 
   A.log "GET /not-json: invalid JSON with String response should be ok"
-  (attempt $ get "/not-json") >>= assertRight >>= \res -> do
+  (attempt $ get notJson) >>= assertRight >>= \res -> do
     typeIs (res :: AffjaxResponse String)
     assertEq ok200 res.status
 
   A.log "POST /mirror: should use the POST method"
-  (attempt $ post "/mirror" "test") >>= assertRight >>= \res -> do
+  (attempt $ post mirror "test") >>= assertRight >>= \res -> do
     assertEq ok200 res.status
     assertEq "POST" (_.method $ unsafeFromForeign res.response)
 
   A.log "PUT with a request body"
   let content = "the quick brown fox jumps over the lazy dog"
-  (attempt $ put "/mirror" content) >>= assertRight >>= \res -> do
+  (attempt $ put mirror content) >>= assertRight >>= \res -> do
     typeIs (res :: AffjaxResponse Foreign)
     assertEq ok200 res.status
     let mirroredReq = unsafeFromForeign res.response
@@ -103,6 +109,6 @@ main = runAff throwException (const $ log "affjax: All good!") $ do
     -- assertEq (Just "test=test") (lookupHeader "Set-Cookie" res.headers)
 
   A.log "Testing cancellation"
-  canceler <- forkAff (post_ "/mirror" "do it now")
+  canceler <- forkAff (post_ mirror "do it now")
   canceled <- canceler `cancel` error "Pull the cord!"
   assertMsg "Should have been canceled" canceled
