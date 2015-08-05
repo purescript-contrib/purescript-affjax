@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/slamdata/purescript-affjax.svg?branch=master)](https://travis-ci.org/slamdata/purescript-affjax)
 
-An library taking advantage of [`purescript-aff`](https://github.com/slamdata/purescript-aff) to enable pain-free asynchronous AJAX requests and response handling.
+A library taking advantage of [`purescript-aff`](https://github.com/slamdata/purescript-aff) to enable pain-free asynchronous AJAX requests and response handling.
 
 # Getting Started
 
@@ -19,7 +19,7 @@ You can construct requests with the `affjax` function:
 ```purescript
 main = launchAff $ do
   res <- affjax $ defaultRequest { url = "/api", method = GET }
-  liftEff $ trace $ "GET /api response: " ++ res.response
+  liftEff $ log $ "GET /api response: " ++ res.response
 ```
 
 (`defaultRequest` is a record value that has all the required fields pre-set for convenient overriding when making a request.)
@@ -29,10 +29,10 @@ Or use of a number of helpers for common cases:
 ```purescript
 main = launchAff $ do
   res1 <- get "/api"
-  liftEff $ trace $ "GET /api response: " ++ res1.response
+  liftEff $ log $ "GET /api response: " ++ res1.response
 
   res2 <- post "/api" someData
-  liftEff $ trace $ "POST /api response: " ++ res2.response
+  liftEff $ log $ "POST /api response: " ++ res2.response
 ```
 
 See the module documentation for a [full list of these helpers](docs/Network.HTTP.Affjax.md#get).
