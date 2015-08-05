@@ -9,7 +9,13 @@ A library taking advantage of [`purescript-aff`](https://github.com/slamdata/pur
 ## Installation
 
 ```
-bower install purescript-aff
+bower install purescript-affjax
+```
+
+If you are intending to use the library in a Node.js setting rather than the browser, you will need an additional dependency from `npm`:
+
+```
+npm install xmlhttprequest
 ```
 
 ## Introduction
