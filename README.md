@@ -29,10 +29,10 @@ Or use of a number of helpers for common cases:
 ```purescript
 main = launchAff $ do
   res1 <- get "/api"
-  liftEff $ trace $ "GET /api response: " ++ res1.response
+  liftEff $ log $ "GET /api response: " ++ res1.response
 
   res2 <- post "/api" someData
-  liftEff $ trace $ "POST /api response: " ++ res2.response
+  liftEff $ log $ "POST /api response: " ++ res2.response
 ```
 
 See the module documentation for a [full list of these helpers](docs/Network.HTTP.Affjax.md#get).
