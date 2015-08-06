@@ -8,7 +8,7 @@
 // jshint maxparams: 5
 exports._ajax = function (mkHeader, options, canceler, errback, callback) {
   var platformSpecific = { };
-  if (typeof module !== "undefined" && module.exports) {
+  if (typeof module !== "undefined" && module.require) {
     // We are on node.js
     platformSpecific.newXHR = function () {
       var XHR = module.require("xmlhttprequest").XMLHttpRequest;
