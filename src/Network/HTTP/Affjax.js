@@ -1,6 +1,5 @@
 /* global exports */
 /* global XMLHttpRequest */
-/* global require */
 /* global module */
 "use strict";
 
@@ -12,12 +11,12 @@ exports._ajax = function (mkHeader, options, canceler, errback, callback) {
   if (typeof module !== "undefined" && module.exports) {
     // We are on node.js
     platformSpecific.newXHR = function () {
-      var XHR = require("xmlhttprequest").XMLHttpRequest;
+      var XHR = module.require("xmlhttprequest").XMLHttpRequest;
       return new XHR();
     };
 
     platformSpecific.fixupUrl = function (url) {
-      var urllib = require("url");
+      var urllib = module.require("url");
       var u = urllib.parse(url);
       u.protocol = u.protocol || "http:";
       u.hostname = u.hostname || "localhost";
