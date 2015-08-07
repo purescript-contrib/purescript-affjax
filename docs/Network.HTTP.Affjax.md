@@ -144,13 +144,29 @@ delete_ :: forall e. URL -> Affjax e Unit
 
 Makes a `DELETE` request to the specified URL and ignores the response.
 
+#### `RetryPolicy`
+
+``` purescript
+type RetryPolicy = { timeout :: Maybe Int, delayCurve :: RetryDelayCurve, shouldRetryWithStatusCode :: StatusCode -> Boolean }
+```
+
+Expresses a policy for retrying Affjax requests with backoff.
+
+#### `defaultRetryPolicy`
+
+``` purescript
+defaultRetryPolicy :: RetryPolicy
+```
+
+A sensible default for retries: no timeout, maximum delay of 30s, initial delay of 0.1s, exponential backoff, and no status code triggers a retry.
+
 #### `retry`
 
 ``` purescript
-retry :: forall e a b. (Requestable a) => Maybe Int -> (AffjaxRequest a -> Affjax (avar :: AVAR | e) b) -> AffjaxRequest a -> Affjax (avar :: AVAR | e) b
+retry :: forall e a b. (Requestable a) => RetryPolicy -> (AffjaxRequest a -> Affjax (avar :: AVAR | e) b) -> AffjaxRequest a -> Affjax (avar :: AVAR | e) b
 ```
 
-Retry a request with exponential backoff, timing out optionally after a specified number of milliseconds. After the timeout, the last received response is returned; if it was not possible to communicate with the server due to an error, then this is bubbled up.
+Retry a request using a `RetryPolicy`. After the timeout, the last received response is returned; if it was not possible to communicate with the server due to an error, then this is bubbled up.
 
 #### `affjax'`
 
