@@ -10,6 +10,7 @@ module Network.HTTP.Affjax
   , post, post_, post', post_'
   , put, put_, put', put_'
   , delete, delete_
+  , RetryDelayCurve()
   , RetryPolicy(..)
   , defaultRetryPolicy
   , retry

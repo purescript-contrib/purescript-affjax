@@ -144,6 +144,14 @@ delete_ :: forall e. URL -> Affjax e Unit
 
 Makes a `DELETE` request to the specified URL and ignores the response.
 
+#### `RetryDelayCurve`
+
+``` purescript
+type RetryDelayCurve = Int -> Int
+```
+
+A sequence of retry delays, in milliseconds.
+
 #### `RetryPolicy`
 
 ``` purescript
