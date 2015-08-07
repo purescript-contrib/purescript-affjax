@@ -64,9 +64,10 @@ main = runAff (\e -> print e >>= \_ -> throwException e) (const $ log "affjax: A
   let mirror       = prefix "/mirror"
   let doesNotExist = prefix "/does-not-exist"
   let notJson      = prefix "/not-json"
+  let retryPolicy = defaultRetryPolicy { timeout = Just 500, shouldRetryWithStatusCode = \_ -> true }
 
   A.log "GET /does-not-exist: should be 404 Not found after retries"
-  (attempt $ retry (Just 5000) affjax $ defaultRequest { url = doesNotExist }) >>= assertRight >>= \res -> do
+  (attempt $ retry retryPolicy affjax $ defaultRequest { url = doesNotExist }) >>= assertRight >>= \res -> do
     typeIs (res :: AffjaxResponse String)
     assertEq notFound404 res.status
 

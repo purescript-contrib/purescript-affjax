@@ -10,6 +10,9 @@ module Network.HTTP.Affjax
   , post, post_, post', post_'
   , put, put_, put', put_'
   , delete, delete_
+  , RetryDelayCurve()
+  , RetryPolicy(..)
+  , defaultRetryPolicy
   , retry
   ) where
 
@@ -20,7 +23,9 @@ import Control.Monad.Aff (Aff(), makeAff, makeAff', Canceler(..), attempt, later
 import Control.Monad.Aff.Par (Par(..), runPar)
 import Control.Monad.Aff.AVar (AVAR(), makeVar, takeVar, putVar)
 import Control.Monad.Eff (Eff())
+import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Exception (Error(), error)
+import Control.Monad.Eff.Ref (REF(), newRef, readRef, writeRef)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either(..), either)
 import Data.Foreign (Foreign(..), F(), parseJSON, readString)
@@ -124,48 +129,68 @@ delete u = affjax $ defaultRequest { method = DELETE, url = u }
 delete_ :: forall e. URL -> Affjax e Unit
 delete_ = delete
 
+-- | A sequence of retry delays, in milliseconds.
+type RetryDelayCurve = Int -> Int
+
+-- | Expresses a policy for retrying Affjax requests with backoff.
+type RetryPolicy
+  = { timeout :: Maybe Int -- ^ the timeout in milliseconds, optional
+    , delayCurve :: RetryDelayCurve
+    , shouldRetryWithStatusCode :: StatusCode -> Boolean -- ^ whether a non-200 status code should trigger a retry
+    }
+
+-- | A sensible default for retries: no timeout, maximum delay of 30s, initial delay of 0.1s, exponential backoff, and no status code triggers a retry.
+defaultRetryPolicy :: RetryPolicy
+defaultRetryPolicy =
+  { timeout : Nothing
+  , delayCurve : \n -> round $ max (30.0 * 1000.0) $ 100.0 * (pow 2.0 $ toNumber (n - 1))
+  , shouldRetryWithStatusCode : \_ -> false
+  }
+
 -- | Either we have a failure (which may be an exception or a failed response), or we have a successful response.
 type RetryState e a = Either (Either e a) a
 
--- | Retry a request with exponential backoff, timing out optionally after a specified number of milliseconds. After the timeout, the last received response is returned; if it was not possible to communicate with the server due to an error, then this is bubbled up.
-retry :: forall e a b. (Requestable a) => Maybe Int -> (AffjaxRequest a -> Affjax (avar :: AVAR | e) b) -> (AffjaxRequest a -> Affjax (avar :: AVAR | e) b)
-retry milliseconds run req = do
-  -- failureVar is either an exception or a failed request
-  failureVar <- makeVar
-  let loop = go failureVar
-  case milliseconds of
+-- | Retry a request using a `RetryPolicy`. After the timeout, the last received response is returned; if it was not possible to communicate with the server due to an error, then this is bubbled up.
+retry :: forall e a b. (Requestable a) => RetryPolicy -> (AffjaxRequest a -> Affjax (avar :: AVAR, ref :: REF | e) b) -> (AffjaxRequest a -> Affjax (avar :: AVAR, ref :: REF | e) b)
+retry policy run req = do
+  -- failureRef is either an exception or a failed request
+  failureRef <- liftEff $ newRef Nothing
+  let loop = go failureRef
+  case policy.timeout of
     Nothing -> loop 1
-    Just milliseconds -> do
+    Just timeout -> do
       respVar <- makeVar
       loopHandle <- forkAff $ loop 1 >>= putVar respVar <<< Just
       timeoutHandle <-
-        forkAff <<< later' milliseconds $ do
+        forkAff <<< later' timeout $ do
           putVar respVar Nothing
           loopHandle `cancel` error "Cancel"
       result <- takeVar respVar
       case result of
-        Nothing -> takeVar failureVar >>= either throwError pure
+        Nothing -> do
+          failure <- liftEff $ readRef failureRef
+          case failure of
+            Nothing -> throwError $ error "Timeout"
+            Just failure -> either throwError pure failure
         Just resp -> pure resp
   where
-    -- delay at attempt #n with exponential backoff
-    delay n = round $ max maxDelay $ 100.0 * (pow 2.0 $ toNumber (n - 1))
-      where
-        -- maximum delay in milliseconds
-        maxDelay = 30.0 * 1000.0
-
     retryState :: Either _ _ -> RetryState _ _
     retryState (Left exn) = Left $ Left exn
     retryState (Right resp) =
       case resp.status of
         StatusCode 200 -> Right resp
-        _ -> Left (Right resp)
+        code ->
+          if policy.shouldRetryWithStatusCode code then
+            Left $ Right resp
+          else
+            Right resp
 
-    go failureVar n = do
+    go failureRef n = do
       result <- retryState <$> attempt (run req)
       case result of
         Left err -> do
-          putVar failureVar err
-          later' (delay n) $ go failureVar (n + 1)
+          liftEff $ writeRef failureRef $ Just err
+          later' (policy.delayCurve n) $ go failureRef (n + 1)
         Right resp -> pure resp
 
 -- | Run a request directly without using `Aff`.
