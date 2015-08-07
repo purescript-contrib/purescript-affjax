@@ -23,7 +23,9 @@ import Control.Monad.Aff (Aff(), makeAff, makeAff', Canceler(..), attempt, later
 import Control.Monad.Aff.Par (Par(..), runPar)
 import Control.Monad.Aff.AVar (AVAR(), makeVar, takeVar, putVar)
 import Control.Monad.Eff (Eff())
+import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Exception (Error(), error)
+import Control.Monad.Eff.Ref (REF(), newRef, readRef, writeRef)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either(..), either)
 import Data.Foreign (Foreign(..), F(), parseJSON, readString)
@@ -149,11 +151,11 @@ defaultRetryPolicy =
 type RetryState e a = Either (Either e a) a
 
 -- | Retry a request using a `RetryPolicy`. After the timeout, the last received response is returned; if it was not possible to communicate with the server due to an error, then this is bubbled up.
-retry :: forall e a b. (Requestable a) => RetryPolicy -> (AffjaxRequest a -> Affjax (avar :: AVAR | e) b) -> (AffjaxRequest a -> Affjax (avar :: AVAR | e) b)
+retry :: forall e a b. (Requestable a) => RetryPolicy -> (AffjaxRequest a -> Affjax (avar :: AVAR, ref :: REF | e) b) -> (AffjaxRequest a -> Affjax (avar :: AVAR, ref :: REF | e) b)
 retry policy run req = do
-  -- failureVar is either an exception or a failed request
-  failureVar <- makeVar
-  let loop = go failureVar
+  -- failureRef is either an exception or a failed request
+  failureRef <- liftEff $ newRef Nothing
+  let loop = go failureRef
   case policy.timeout of
     Nothing -> loop 1
     Just timeout -> do
@@ -165,7 +167,11 @@ retry policy run req = do
           loopHandle `cancel` error "Cancel"
       result <- takeVar respVar
       case result of
-        Nothing -> takeVar failureVar >>= either throwError pure
+        Nothing -> do
+          failure <- liftEff $ readRef failureRef
+          case failure of
+            Nothing -> throwError $ error "Timeout"
+            Just failure -> either throwError pure failure
         Just resp -> pure resp
   where
     retryState :: Either _ _ -> RetryState _ _
@@ -179,12 +185,12 @@ retry policy run req = do
           else
             Right resp
 
-    go failureVar n = do
+    go failureRef n = do
       result <- retryState <$> attempt (run req)
       case result of
         Left err -> do
-          putVar failureVar err
-          later' (policy.delayCurve n) $ go failureVar (n + 1)
+          liftEff $ writeRef failureRef $ Just err
+          later' (policy.delayCurve n) $ go failureRef (n + 1)
         Right resp -> pure resp
 
 -- | Run a request directly without using `Aff`.

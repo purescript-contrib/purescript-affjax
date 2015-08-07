@@ -171,7 +171,7 @@ A sensible default for retries: no timeout, maximum delay of 30s, initial delay 
 #### `retry`
 
 ``` purescript
-retry :: forall e a b. (Requestable a) => RetryPolicy -> (AffjaxRequest a -> Affjax (avar :: AVAR | e) b) -> AffjaxRequest a -> Affjax (avar :: AVAR | e) b
+retry :: forall e a b. (Requestable a) => RetryPolicy -> (AffjaxRequest a -> Affjax (avar :: AVAR, ref :: REF | e) b) -> AffjaxRequest a -> Affjax (avar :: AVAR, ref :: REF | e) b
 ```
 
 Retry a request using a `RetryPolicy`. After the timeout, the last received response is returned; if it was not possible to communicate with the server due to an error, then this is bubbled up.
