@@ -7,9 +7,9 @@ module Network.HTTP.Affjax.Response
 import Prelude
 import Data.Either (Either(..))
 import Data.Foreign (Foreign(), F(), readString, unsafeReadTagged)
-import DOM (Document())
-import DOM.File (Blob())
-import DOM.XHR (FormData())
+import DOM.File.Types (Blob())
+import DOM.Node.Types (Document())
+import DOM.XHR.Types (FormData())
 import qualified Data.ArrayBuffer.Types as A
 
 -- | Valid response types for an AJAX request. This is used to determine the
