@@ -33,7 +33,7 @@ import Data.Function (Fn5(), runFn5, Fn4(), runFn4)
 import Data.Int (toNumber, round)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (Nullable(), toNullable)
-import DOM.XHR (XMLHttpRequest())
+import DOM.XHR.Types (XMLHttpRequest())
 import Math (max, pow)
 import Network.HTTP.Affjax.Request
 import Network.HTTP.Affjax.Response

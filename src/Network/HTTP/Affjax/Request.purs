@@ -4,9 +4,9 @@ module Network.HTTP.Affjax.Request
   ) where
 
 import Prelude
-import DOM (Document())
-import DOM.File (Blob())
-import DOM.XHR (FormData())
+import DOM.File.Types (Blob())
+import DOM.Node.Types (Document())
+import DOM.XHR.Types (FormData())
 import qualified Unsafe.Coerce as U
 import qualified Data.ArrayBuffer.Types as A
 
