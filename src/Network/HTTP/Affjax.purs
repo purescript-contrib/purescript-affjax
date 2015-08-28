@@ -28,7 +28,7 @@ import Control.Monad.Eff.Exception (Error(), error)
 import Control.Monad.Eff.Ref (REF(), newRef, readRef, writeRef)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either(..), either)
-import Data.Foreign (Foreign(..), F(), parseJSON, readString)
+import Data.Foreign (Foreign(), F(), parseJSON, readString)
 import Data.Function (Fn5(), runFn5, Fn4(), runFn4)
 import Data.Int (toNumber, round)
 import Data.Maybe (Maybe(..), maybe)
@@ -174,7 +174,7 @@ retry policy run req = do
             Just failure -> either throwError pure failure
         Just resp -> pure resp
   where
-    retryState :: Either _ _ -> RetryState _ _
+    retryState :: Either Error (AffjaxResponse b) -> RetryState Error (AffjaxResponse b)
     retryState (Left exn) = Left $ Left exn
     retryState (Right resp) =
       case resp.status of
