@@ -231,12 +231,12 @@ type AjaxRequest =
   }
 
 foreign import _ajax
-  :: forall e a. Fn5 (String -> String -> ResponseHeader)
-                 AjaxRequest
-                 (XMLHttpRequest -> Canceler (ajax :: AJAX | e))
-                 (Error -> Eff (ajax :: AJAX | e) Unit)
-                 (AffjaxResponse Foreign -> Eff (ajax :: AJAX | e) Unit)
-                 (Eff (ajax :: AJAX | e) (Canceler (ajax :: AJAX | e)))
+  :: forall e. Fn5 (String -> String -> ResponseHeader)
+               AjaxRequest
+               (XMLHttpRequest -> Canceler (ajax :: AJAX | e))
+               (Error -> Eff (ajax :: AJAX | e) Unit)
+               (AffjaxResponse Foreign -> Eff (ajax :: AJAX | e) Unit)
+               (Eff (ajax :: AJAX | e) (Canceler (ajax :: AJAX | e)))
 
 cancelAjax :: forall e. XMLHttpRequest -> Canceler (ajax :: AJAX | e)
 cancelAjax xhr = Canceler \err -> makeAff (\eb cb -> runFn4 _cancelAjax xhr err eb cb)
