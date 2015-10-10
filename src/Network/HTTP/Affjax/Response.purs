@@ -72,3 +72,7 @@ instance responsableString :: Respondable String where
 instance responsableUnit :: Respondable Unit where
   responseType = StringResponse
   fromResponse = const (Right unit)
+
+instance responsableArrayBuffer :: Respondable A.ArrayBuffer where
+  responseType = ArrayBufferResponse
+  fromResponse = unsafeReadTagged "ArrayBuffer"
