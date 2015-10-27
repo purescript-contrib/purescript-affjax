@@ -24,6 +24,7 @@
   ],
   "dependencies": {
     "purescript-aff": "^0.13.0",
+    "purescript-argonaut-core": "^0.2.0",
     "purescript-arraybuffer-types": "^0.2.0",
     "purescript-dom": "^0.2.0",
     "purescript-foreign": "^0.7.0",

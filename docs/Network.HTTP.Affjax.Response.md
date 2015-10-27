@@ -49,9 +49,11 @@ class Respondable a where
 ``` purescript
 instance responsableBlob :: Respondable Blob
 instance responsableDocument :: Respondable Document
-instance responsableJSON :: Respondable Foreign
+instance responsableForeign :: Respondable Foreign
 instance responsableString :: Respondable String
 instance responsableUnit :: Respondable Unit
+instance responsableArrayBuffer :: Respondable ArrayBuffer
+instance responsableJson :: Respondable Json
 ```
 
 

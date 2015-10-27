@@ -5,12 +5,17 @@ module Network.HTTP.Affjax.Response
   ) where
 
 import Prelude
+
+import Data.Argonaut.Core (Json())
 import Data.Either (Either(..))
 import Data.Foreign (Foreign(), F(), readString, unsafeReadTagged)
+import qualified Data.ArrayBuffer.Types as A
+
 import DOM.File.Types (Blob())
 import DOM.Node.Types (Document())
 import DOM.XHR.Types (FormData())
-import qualified Data.ArrayBuffer.Types as A
+
+import Unsafe.Coerce (unsafeCoerce)
 
 -- | Valid response types for an AJAX request. This is used to determine the
 -- | `ResponseContent` type for a request. The `a` type variable is a phantom
@@ -61,7 +66,7 @@ instance responsableDocument :: Respondable Document where
   responseType = DocumentResponse
   fromResponse = unsafeReadTagged "Document"
 
-instance responsableJSON :: Respondable Foreign where
+instance responsableForeign :: Respondable Foreign where
   responseType = JSONResponse
   fromResponse = Right
 
@@ -76,3 +81,7 @@ instance responsableUnit :: Respondable Unit where
 instance responsableArrayBuffer :: Respondable A.ArrayBuffer where
   responseType = ArrayBufferResponse
   fromResponse = unsafeReadTagged "ArrayBuffer"
+
+instance responsableJson :: Respondable Json where
+  responseType = JSONResponse
+  fromResponse = Right <<< unsafeCoerce
