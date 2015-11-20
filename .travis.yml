@@ -1,7 +1,7 @@
 language: node_js
 sudo: false
 node_js:
-  - 0.10
+  - 4
 install:
   - npm install bower gulp -g
   - npm install && bower install
@@ -9,3 +9,11 @@ script:
   - gulp
   - node ./test-server.js &
   - sleep 2 && node tmp/test.js
+after_success:
+- >-
+  test $TRAVIS_TAG &&
+  node_modules/.bin/psc-publish > .pursuit.json &&
+  curl -X POST http://pursuit.purescript.org/packages \
+    -d @.pursuit.json \
+    -H 'Accept: application/json' \
+    -H "Authorization: token ${GITHUB_TOKEN}"
