@@ -17,28 +17,34 @@ module Network.HTTP.Affjax
   ) where
 
 import Prelude
-import Control.Alt ((<|>))
-import Control.Bind ((<=<))
+
 import Control.Monad.Aff (Aff(), makeAff, makeAff', Canceler(..), attempt, later', forkAff, cancel)
-import Control.Monad.Aff.Par (Par(..), runPar)
 import Control.Monad.Aff.AVar (AVAR(), makeVar, takeVar, putVar)
 import Control.Monad.Eff (Eff())
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Exception (Error(), error)
 import Control.Monad.Eff.Ref (REF(), newRef, readRef, writeRef)
 import Control.Monad.Error.Class (throwError)
+
+import Data.Array as Arr
 import Data.Either (Either(..), either)
-import Data.Foreign (Foreign(), F(), parseJSON, readString)
-import Data.Function (Fn5(), runFn5, Fn4(), runFn4)
+import Data.Foreign (Foreign())
+import Data.Foldable (any)
+import Data.Function (Fn5(), runFn5, Fn4(), runFn4, on)
 import Data.Int (toNumber, round)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable(), toNullable)
-import DOM.XHR.Types (XMLHttpRequest())
+import Data.Tuple (Tuple(..), fst, snd)
+
 import Math (max, pow)
+
+import DOM.XHR.Types (XMLHttpRequest())
+
 import Network.HTTP.Affjax.Request
 import Network.HTTP.Affjax.Response
+import Network.HTTP.MimeType (MimeType())
 import Network.HTTP.Method (Method(..), methodToString)
-import Network.HTTP.RequestHeader (RequestHeader(), requestHeaderName, requestHeaderValue)
+import Network.HTTP.RequestHeader (RequestHeader(..), requestHeaderName, requestHeaderValue)
 import Network.HTTP.ResponseHeader (ResponseHeader(), responseHeader)
 import Network.HTTP.StatusCode (StatusCode(..))
 
@@ -202,23 +208,40 @@ affjax' :: forall e a b. (Requestable a, Respondable b) =>
 affjax' req eb cb =
   runFn5 _ajax responseHeader req' cancelAjax eb cb'
   where
+
   req' :: AjaxRequest
   req' = { method: methodToString req.method
          , url: req.url
-         , headers: (\h -> { field: requestHeaderName h, value: requestHeaderValue h }) <$> req.headers
-         , content: toNullable (toRequest <$> req.content)
-         , responseType: responseTypeToString (responseType :: ResponseType b)
+         , headers: (\h -> { field: requestHeaderName h, value: requestHeaderValue h }) <$> headers
+         , content: toNullable (snd requestSettings)
+         , responseType: responseTypeToString (snd responseSettings)
          , username: toNullable req.username
          , password: toNullable req.password
          }
+
+  requestSettings :: Tuple (Maybe MimeType) (Maybe RequestContent)
+  requestSettings = case toRequest <$> req.content of
+    Nothing -> Tuple Nothing Nothing
+    Just (Tuple mime rt) -> Tuple mime (Just rt)
+
+  responseSettings :: Tuple (Maybe MimeType) (ResponseType b)
+  responseSettings = responseType
+
+  headers :: Array RequestHeader
+  headers =
+    addHeader (ContentType <$> fst requestSettings) $
+      addHeader (Accept <$> fst responseSettings)
+        req.headers
+
+  addHeader :: Maybe RequestHeader -> Array RequestHeader -> Array RequestHeader
+  addHeader h hs = case h of
+    Just h | not $ any (on eq requestHeaderName h) hs -> hs `Arr.snoc` h
+    _ -> hs
+
   cb' :: AffjaxResponse ResponseContent -> Eff (ajax :: AJAX | e) Unit
-  cb' res = case res { response = _  } <$> fromResponse' res.response of
+  cb' res = case res { response = _  } <$> fromResponse res.response of
     Left err -> eb $ error (show err)
     Right res' -> cb res'
-  fromResponse' :: ResponseContent -> F b
-  fromResponse' = case (responseType :: ResponseType b) of
-    JSONResponse -> fromResponse <=< parseJSON <=< readString
-    _ -> fromResponse
 
 type AjaxRequest =
   { method :: String

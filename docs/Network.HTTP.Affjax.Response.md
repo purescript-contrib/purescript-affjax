@@ -35,13 +35,14 @@ type ResponseContent = Foreign
 ```
 
 Type representing content types that be received from an XHR request
-(Blob, Document, JSON, String).
+(Blob, Document, JSON, String). An optional mime-type can be specified for
+a default `Accept` header.
 
 #### `Respondable`
 
 ``` purescript
 class Respondable a where
-  responseType :: ResponseType a
+  responseType :: Tuple (Maybe MimeType) (ResponseType a)
   fromResponse :: ResponseContent -> F a
 ```
 
@@ -49,9 +50,11 @@ class Respondable a where
 ``` purescript
 instance responsableBlob :: Respondable Blob
 instance responsableDocument :: Respondable Document
-instance responsableJSON :: Respondable Foreign
+instance responsableForeign :: Respondable Foreign
 instance responsableString :: Respondable String
 instance responsableUnit :: Respondable Unit
+instance responsableArrayBuffer :: Respondable ArrayBuffer
+instance responsableJson :: Respondable Json
 ```
 
 
