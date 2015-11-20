@@ -18,11 +18,12 @@ instance requestableRequestContent :: Requestable RequestContent
 
 ``` purescript
 class Requestable a where
-  toRequest :: a -> RequestContent
+  toRequest :: a -> Tuple (Maybe MimeType) RequestContent
 ```
 
 A class for types that can be converted to values that can be sent with
-XHR requests.
+XHR requests. An optional mime-type can be specified for a default
+`Content-Type` header.
 
 ##### Instances
 ``` purescript
@@ -39,6 +40,7 @@ instance requestableFloat64Array :: Requestable (ArrayView Float64)
 instance requestableBlob :: Requestable Blob
 instance requestableDocument :: Requestable Document
 instance requestableString :: Requestable String
+instance requestableJson :: Requestable Json
 instance requestableFormData :: Requestable FormData
 instance requestableUnit :: Requestable Unit
 ```

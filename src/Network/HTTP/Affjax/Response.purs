@@ -6,9 +6,13 @@ module Network.HTTP.Affjax.Response
 
 import Prelude
 
+import Control.Bind ((<=<))
+
 import Data.Argonaut.Core (Json())
 import Data.Either (Either(..))
-import Data.Foreign (Foreign(), F(), readString, unsafeReadTagged)
+import Data.Foreign (Foreign(), F(), parseJSON, readString, unsafeReadTagged)
+import Data.Maybe (Maybe(..))
+import Data.Tuple (Tuple(..))
 import qualified Data.ArrayBuffer.Types as A
 
 import DOM.File.Types (Blob())
@@ -16,6 +20,9 @@ import DOM.Node.Types (Document())
 import DOM.XHR.Types (FormData())
 
 import Unsafe.Coerce (unsafeCoerce)
+
+import Network.HTTP.MimeType (MimeType())
+import Network.HTTP.MimeType.Common (applicationJSON)
 
 -- | Valid response types for an AJAX request. This is used to determine the
 -- | `ResponseContent` type for a request. The `a` type variable is a phantom
@@ -51,37 +58,38 @@ responseTypeToString JSONResponse = "text" -- IE doesn't support "json" response
 responseTypeToString StringResponse = "text"
 
 -- | Type representing content types that be received from an XHR request
--- | (Blob, Document, JSON, String).
+-- | (Blob, Document, JSON, String). An optional mime-type can be specified for
+-- | a default `Accept` header.
 type ResponseContent = Foreign
 
 class Respondable a where
-  responseType :: ResponseType a
+  responseType :: Tuple (Maybe MimeType) (ResponseType a)
   fromResponse :: ResponseContent -> F a
 
 instance responsableBlob :: Respondable Blob where
-  responseType = BlobResponse
+  responseType = Tuple Nothing BlobResponse
   fromResponse = unsafeReadTagged "Blob"
 
 instance responsableDocument :: Respondable Document where
-  responseType = DocumentResponse
+  responseType = Tuple Nothing DocumentResponse
   fromResponse = unsafeReadTagged "Document"
 
 instance responsableForeign :: Respondable Foreign where
-  responseType = JSONResponse
-  fromResponse = Right
+  responseType = Tuple Nothing JSONResponse
+  fromResponse = parseJSON <=< readString
 
 instance responsableString :: Respondable String where
-  responseType = StringResponse
+  responseType = Tuple Nothing StringResponse
   fromResponse = readString
 
 instance responsableUnit :: Respondable Unit where
-  responseType = StringResponse
+  responseType = Tuple Nothing StringResponse
   fromResponse = const (Right unit)
 
 instance responsableArrayBuffer :: Respondable A.ArrayBuffer where
-  responseType = ArrayBufferResponse
+  responseType = Tuple Nothing ArrayBufferResponse
   fromResponse = unsafeReadTagged "ArrayBuffer"
 
 instance responsableJson :: Respondable Json where
-  responseType = JSONResponse
+  responseType = Tuple (Just applicationJSON) JSONResponse
   fromResponse = Right <<< unsafeCoerce
