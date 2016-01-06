@@ -92,4 +92,4 @@ instance responsableArrayBuffer :: Respondable A.ArrayBuffer where
 
 instance responsableJson :: Respondable Json where
   responseType = Tuple (Just applicationJSON) JSONResponse
-  fromResponse = Right <<< unsafeCoerce
+  fromResponse = unsafeCoerce (parseJSON <=< readString)
