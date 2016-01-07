@@ -17,7 +17,6 @@ import qualified Data.ArrayBuffer.Types as A
 
 import DOM.File.Types (Blob())
 import DOM.Node.Types (Document())
-import DOM.XHR.Types (FormData())
 
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -76,7 +75,7 @@ instance responsableDocument :: Respondable Document where
 
 instance responsableForeign :: Respondable Foreign where
   responseType = Tuple Nothing JSONResponse
-  fromResponse = parseJSON <=< readString
+  fromResponse = Right <<< unsafeCoerce
 
 instance responsableString :: Respondable String where
   responseType = Tuple Nothing StringResponse

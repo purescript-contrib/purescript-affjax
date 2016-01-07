@@ -18,6 +18,7 @@ module Network.HTTP.Affjax
 
 import Prelude
 
+import Control.Bind ((<=<))
 import Control.Monad.Aff (Aff(), makeAff, makeAff', Canceler(..), attempt, later', forkAff, cancel)
 import Control.Monad.Aff.AVar (AVAR(), makeVar, takeVar, putVar)
 import Control.Monad.Eff (Eff())
@@ -28,7 +29,7 @@ import Control.Monad.Error.Class (throwError)
 
 import Data.Array as Arr
 import Data.Either (Either(..), either)
-import Data.Foreign (Foreign())
+import Data.Foreign (Foreign(), F(), parseJSON, readString)
 import Data.Foldable (any)
 import Data.Function (Fn5(), runFn5, Fn4(), runFn4, on)
 import Data.Int (toNumber, round)
@@ -239,9 +240,14 @@ affjax' req eb cb =
     _ -> hs
 
   cb' :: AffjaxResponse ResponseContent -> Eff (ajax :: AJAX | e) Unit
-  cb' res = case res { response = _  } <$> fromResponse res.response of
+  cb' res = case res { response = _  } <$> fromResponse' res.response of
     Left err -> eb $ error (show err)
     Right res' -> cb res'
+
+  fromResponse' :: ResponseContent -> F b
+  fromResponse' = case snd responseSettings of
+    JSONResponse -> fromResponse <=< parseJSON <=< readString
+    _ -> fromResponse
 
 type AjaxRequest =
   { method :: String

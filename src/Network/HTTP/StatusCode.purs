@@ -2,8 +2,6 @@ module Network.HTTP.StatusCode where
 
 import Prelude
 
-import Data.Int
-
 newtype StatusCode = StatusCode Int
 
 instance eqStatusCode :: Eq StatusCode where
