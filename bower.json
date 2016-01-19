@@ -28,6 +28,7 @@
     "purescript-arraybuffer-types": "^0.2.0",
     "purescript-dom": "^0.2.0",
     "purescript-foreign": "^0.7.0",
+    "purescript-globals": "^0.2.2",
     "purescript-integers": "^0.2.0",
     "purescript-math": "^0.2.0",
     "purescript-nullable": "^0.2.0",
