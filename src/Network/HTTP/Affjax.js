@@ -46,8 +46,13 @@ exports._ajax = function (mkHeader, options, canceler, errback, callback) {
     var fixedUrl = platformSpecific.fixupUrl(options.url);
     xhr.open(options.method || "GET", fixedUrl, true, options.username, options.password);
     if (options.headers) {
-      for (var i = 0, header; (header = options.headers[i]) != null; i++) {
-        xhr.setRequestHeader(header.field, header.value);
+      try {
+        for (var i = 0, header; (header = options.headers[i]) != null; i++) {
+          xhr.setRequestHeader(header.field, header.value);
+        }
+      }
+      catch (e) {
+        errback(e)();
       }
     }
     xhr.onerror = function () {
