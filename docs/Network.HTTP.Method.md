@@ -18,8 +18,8 @@ data Method
 
 ##### Instances
 ``` purescript
-instance eqMethod :: Eq Method
-instance showMethod :: Show Method
+Eq Method
+Show Method
 ```
 
 #### `methodToString`

@@ -18,8 +18,8 @@ type used to associate the `ResponseType` with a particular instance of
 
 ##### Instances
 ``` purescript
-instance eqResponseType :: Eq (ResponseType a)
-instance showResponseType :: Show (ResponseType a)
+Eq (ResponseType a)
+Show (ResponseType a)
 ```
 
 #### `responseTypeToString`
@@ -48,13 +48,13 @@ class Respondable a where
 
 ##### Instances
 ``` purescript
-instance responsableBlob :: Respondable Blob
-instance responsableDocument :: Respondable Document
-instance responsableForeign :: Respondable Foreign
-instance responsableString :: Respondable String
-instance responsableUnit :: Respondable Unit
-instance responsableArrayBuffer :: Respondable ArrayBuffer
-instance responsableJson :: Respondable Json
+Respondable Blob
+Respondable Document
+Respondable Foreign
+Respondable String
+Respondable Unit
+Respondable ArrayBuffer
+Respondable Json
 ```
 
 
