@@ -9,6 +9,8 @@ import Data.Argonaut.Core (Json())
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import qualified Data.ArrayBuffer.Types as A
+import Data.FormURLEncoded (FormURLEncoded())
+import qualified Data.FormURLEncoded as URLEncoded
 
 import DOM.File.Types (Blob())
 import DOM.Node.Types (Document())
@@ -17,7 +19,7 @@ import DOM.XHR.Types (FormData())
 import qualified Unsafe.Coerce as U
 
 import Network.HTTP.MimeType (MimeType())
-import Network.HTTP.MimeType.Common (applicationJSON)
+import Network.HTTP.MimeType.Common (applicationJSON, applicationFormURLEncoded)
 
 -- | Type representing all content types that be sent via XHR (ArrayBufferView,
 -- | Blob, Document, String, FormData).
@@ -76,6 +78,10 @@ instance requestableJson :: Requestable Json where
 
 instance requestableFormData :: Requestable FormData where
   toRequest = defaultToRequest
+
+instance requestableFormURLEncoded :: Requestable FormURLEncoded where
+  toRequest form = Tuple (Just applicationFormURLEncoded)
+                         (U.unsafeCoerce (URLEncoded.encode form))
 
 instance requestableUnit :: Requestable Unit where
   toRequest = defaultToRequest
