@@ -9,8 +9,8 @@ newtype StatusCode
 
 ##### Instances
 ``` purescript
-instance eqStatusCode :: Eq StatusCode
-instance showStatusCode :: Show StatusCode
+Eq StatusCode
+Show StatusCode
 ```
 
 

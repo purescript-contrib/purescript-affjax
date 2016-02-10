@@ -11,8 +11,8 @@ data RequestHeader
 
 ##### Instances
 ``` purescript
-instance eqRequestHeader :: Eq RequestHeader
-instance showRequestHeader :: Show RequestHeader
+Eq RequestHeader
+Show RequestHeader
 ```
 
 #### `requestHeaderName`

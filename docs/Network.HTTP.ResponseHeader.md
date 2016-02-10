@@ -8,8 +8,8 @@ data ResponseHeader
 
 ##### Instances
 ``` purescript
-instance eqResponseHeader :: Eq ResponseHeader
-instance showResponseHeader :: Show ResponseHeader
+Eq ResponseHeader
+Show ResponseHeader
 ```
 
 #### `responseHeader`

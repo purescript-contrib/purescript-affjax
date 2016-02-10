@@ -11,7 +11,7 @@ Blob, Document, String, FormData).
 
 ##### Instances
 ``` purescript
-instance requestableRequestContent :: Requestable RequestContent
+Requestable RequestContent
 ```
 
 #### `Requestable`
@@ -27,22 +27,22 @@ XHR requests. An optional mime-type can be specified for a default
 
 ##### Instances
 ``` purescript
-instance requestableRequestContent :: Requestable RequestContent
-instance requestableInt8Array :: Requestable (ArrayView Int8)
-instance requestableInt16Array :: Requestable (ArrayView Int16)
-instance requestableInt32Array :: Requestable (ArrayView Int32)
-instance requestableUint8Array :: Requestable (ArrayView Uint8)
-instance requestableUint16Array :: Requestable (ArrayView Uint16)
-instance requestableUint32Array :: Requestable (ArrayView Uint32)
-instance requestableUint8ClampedArray :: Requestable (ArrayView Uint8Clamped)
-instance requestableFloat32Array :: Requestable (ArrayView Float32)
-instance requestableFloat64Array :: Requestable (ArrayView Float64)
-instance requestableBlob :: Requestable Blob
-instance requestableDocument :: Requestable Document
-instance requestableString :: Requestable String
-instance requestableJson :: Requestable Json
-instance requestableFormData :: Requestable FormData
-instance requestableUnit :: Requestable Unit
+Requestable RequestContent
+Requestable (ArrayView Int8)
+Requestable (ArrayView Int16)
+Requestable (ArrayView Int32)
+Requestable (ArrayView Uint8)
+Requestable (ArrayView Uint16)
+Requestable (ArrayView Uint32)
+Requestable (ArrayView Uint8Clamped)
+Requestable (ArrayView Float32)
+Requestable (ArrayView Float64)
+Requestable Blob
+Requestable Document
+Requestable String
+Requestable Json
+Requestable FormData
+Requestable Unit
 ```
 
 

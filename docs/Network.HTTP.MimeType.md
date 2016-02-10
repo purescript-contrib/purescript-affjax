@@ -9,8 +9,8 @@ newtype MimeType
 
 ##### Instances
 ``` purescript
-instance eqMimeType :: Eq MimeType
-instance showMimeType :: Show MimeType
+Eq MimeType
+Show MimeType
 ```
 
 #### `mimeTypeToString`

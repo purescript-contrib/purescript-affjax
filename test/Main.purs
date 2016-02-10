@@ -3,9 +3,11 @@ module Test.Main where
 import Prelude
 
 import Control.Monad.Aff
+import Control.Monad.Aff.AVar (AVAR())
 import Control.Bind
 import Control.Monad.Eff
 import Control.Monad.Eff.Class
+import Control.Monad.Eff.Ref (REF())
 import Control.Monad.Eff.Console (CONSOLE(), log, print)
 import qualified Control.Monad.Aff.Console as A
 import Control.Monad.Eff.Exception
@@ -13,11 +15,6 @@ import Data.Either
 import Data.Maybe
 import Data.Foreign
 import Network.HTTP.Affjax
-import Network.HTTP.Affjax.Response
-import Network.HTTP.Affjax.Request
-import Network.HTTP.Method
-import Network.HTTP.MimeType.Common
-import Network.HTTP.RequestHeader
 import Network.HTTP.StatusCode
 
 foreign import logAny
@@ -55,6 +52,15 @@ assertEq x y = if x == y
 typeIs :: forall e a. a -> Assert e Unit
 typeIs = const (return unit)
 
+type MainEffects e =
+  ( ref :: REF
+  , avar :: AVAR
+  , err :: EXCEPTION
+  , console :: CONSOLE
+  | e
+  )
+
+main :: Eff (MainEffects (ajax :: AJAX)) Unit
 main = runAff (\e -> print e >>= \_ -> throwException e) (const $ log "affjax: All good!") $ do
   let ok200 = StatusCode 200
   let notFound404 = StatusCode 404
@@ -82,7 +88,7 @@ main = runAff (\e -> print e >>= \_ -> throwException e) (const $ log "affjax: A
     assertEq notFound404 res.status
 
   A.log "GET /not-json: invalid JSON with Foreign response should throw an error"
-  assertLeft =<< attempt (get doesNotExist :: Affjax _ Foreign)
+  assertLeft =<< attempt (get doesNotExist :: Affjax (MainEffects ()) Foreign)
 
   A.log "GET /not-json: invalid JSON with String response should be ok"
   (attempt $ get notJson) >>= assertRight >>= \res -> do

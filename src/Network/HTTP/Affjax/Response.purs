@@ -6,11 +6,9 @@ module Network.HTTP.Affjax.Response
 
 import Prelude
 
-import Control.Bind ((<=<))
-
 import Data.Argonaut.Core (Json())
 import Data.Either (Either(..))
-import Data.Foreign (Foreign(), F(), parseJSON, readString, unsafeReadTagged)
+import Data.Foreign (Foreign(), F(), readString, unsafeReadTagged)
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import qualified Data.ArrayBuffer.Types as A
