@@ -1,11 +1,14 @@
 module Network.HTTP.Affjax.Request
   ( RequestContent()
   , Requestable, toRequest
+  , FormDataValue(..), toFormData
+  , FormDataURLEncoded(..), toFormDataURLEncoded
   ) where
 
 import Prelude
 
 import Data.Argonaut.Core (Json())
+import qualified Data.Foldable as Foldable
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import qualified Data.ArrayBuffer.Types as A
@@ -15,6 +18,8 @@ import qualified Data.FormURLEncoded as URLEncoded
 import DOM.File.Types (Blob())
 import DOM.Node.Types (Document())
 import DOM.XHR.Types (FormData())
+
+import Global (encodeURIComponent)
 
 import qualified Unsafe.Coerce as U
 
@@ -85,3 +90,41 @@ instance requestableFormURLEncoded :: Requestable FormURLEncoded where
 
 instance requestableUnit :: Requestable Unit where
   toRequest = defaultToRequest
+
+-- Helper functions to create `FormData` and URI encoded data (`FormDataURLEncoded`).
+
+-- | Used to create values in `FormData`.
+data FormDataValue = 
+    FormDataString String
+    -- TODO: Could add File, Blob, etc.
+
+-- | Convert a mapping of keys to values into a `FormData`.
+toFormData :: Array (Tuple String FormDataValue) -> FormData
+toFormData dat =
+  let form = newFormData unit in
+  let _unit = map (appendData form) dat in
+  form
+
+  where
+    appendData form (Tuple key (FormDataString val)) = appendString form key val
+
+foreign import newFormData :: Unit -> FormData
+foreign import appendString :: FormData -> String -> String -> Unit
+
+-- | Newtype wrapper around a URL encoded string.
+newtype FormDataURLEncoded = FormDataURLEncoded String 
+
+-- | Convert a mapping of keys to `String` values into a URL encoded string (`FormDataURLEncoded`).
+toFormDataURLEncoded :: Array (Tuple String String) -> FormDataURLEncoded
+toFormDataURLEncoded dat =
+  let encoded = map encode dat in
+  FormDataURLEncoded $ Foldable.intercalate "&" encoded
+
+  where
+    encode :: (Tuple String String) -> String
+    encode (Tuple key val) =
+      encodeURIComponent key <> "=" <> encodeURIComponent val
+
+instance formDataURLEncodedRequestable :: Requestable FormDataURLEncoded where
+  toRequest (FormDataURLEncoded d) =
+    Tuple (Just applicationFormURLEncoded) (U.unsafeCoerce d)
