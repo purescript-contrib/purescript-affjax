@@ -73,6 +73,7 @@ exports._ajax = function (mkHeader, options, canceler, errback, callback) {
       })();
     };
     xhr.responseType = options.responseType;
+    xhr.withCredentials = options.withCredentials;
     xhr.send(options.content);
     return canceler(xhr);
   };

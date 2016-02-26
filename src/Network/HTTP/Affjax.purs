@@ -62,6 +62,7 @@ type AffjaxRequest a =
   , content :: Maybe a
   , username :: Maybe String
   , password :: Maybe String
+  , withCredentials :: Boolean
   }
 
 defaultRequest :: AffjaxRequest Unit
@@ -72,6 +73,7 @@ defaultRequest =
   , content: Nothing
   , username: Nothing
   , password: Nothing
+  , withCredentials: false
   }
 
 -- | The type of records that will be received as an Affjax response.
@@ -218,6 +220,7 @@ affjax' req eb cb =
          , responseType: responseTypeToString (snd responseSettings)
          , username: toNullable req.username
          , password: toNullable req.password
+         , withCredentials: req.withCredentials
          }
 
   requestSettings :: Tuple (Maybe MimeType) (Maybe RequestContent)
@@ -257,6 +260,7 @@ type AjaxRequest =
   , responseType :: String
   , username :: Nullable String
   , password :: Nullable String
+  , withCredentials :: Boolean
   }
 
 foreign import _ajax
