@@ -21,6 +21,18 @@ app.get('/not-json', function(req, res) {
   res.send('This is not JSON');
 });
 
+app.all('/test-query-params', function(req, res) {
+  // request url:  /test-query-params?order=desc&shoe[color]=blue&shoe[type]=converse
+  var q = req.query;
+  if (q.order == "desc"
+      && q.shoe.color == "blue"
+      && q.shoe.type == "converse") {
+    res.sendStatus(200);
+  } else {
+    res.sendStatus(500);
+  }
+});
+
 app.all('/mirror', function(req, res) {
   res.json({
     headers: req.headers,
