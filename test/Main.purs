@@ -14,6 +14,7 @@ import Control.Monad.Eff.Exception
 import Data.Either
 import Data.Maybe
 import Data.Foreign
+import Data.Tuple
 import Network.HTTP.Affjax
 import Network.HTTP.StatusCode
 
@@ -92,6 +93,16 @@ main = runAff (\e -> print e >>= \_ -> throwException e) (const $ log "affjax: A
 
   A.log "GET /not-json: invalid JSON with String response should be ok"
   (attempt $ get notJson) >>= assertRight >>= \res -> do
+    typeIs (res :: AffjaxResponse String)
+    assertEq ok200 res.status
+
+  A.log "GET url query params: /test-query-params?order=desc&shoe[color]=blue&shoe[type]=converse"
+  (attempt $ affjax $
+    defaultRequest { url = prefix "/test-query-params"
+                   , queryParams = mkQueryParams [ Tuple "order" (Just "desc")
+                                                 , Tuple "shoe[color]" (Just "blue")
+                                                 , Tuple "shoe[type]" (Just "converse")]
+                   }) >>= assertRight >>= \res -> do
     typeIs (res :: AffjaxResponse String)
     assertEq ok200 res.status
 

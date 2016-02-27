@@ -4,6 +4,7 @@ module Network.HTTP.Affjax
   , AffjaxRequest(), defaultRequest
   , AffjaxResponse()
   , URL()
+  , QueryParams
   , affjax
   , affjax'
   , get
@@ -14,6 +15,7 @@ module Network.HTTP.Affjax
   , RetryPolicy(..)
   , defaultRetryPolicy
   , retry
+  , mkQueryParams
   ) where
 
 import Prelude
@@ -36,6 +38,7 @@ import Data.Int (toNumber, round)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable(), toNullable)
 import Data.Tuple (Tuple(..), fst, snd)
+import Data.String (contains) as String
 
 import Math (max, pow)
 
@@ -48,6 +51,8 @@ import Network.HTTP.Method (Method(..), methodToString)
 import Network.HTTP.RequestHeader (RequestHeader(..), requestHeaderName, requestHeaderValue)
 import Network.HTTP.ResponseHeader (ResponseHeader(), responseHeader)
 import Network.HTTP.StatusCode (StatusCode(..))
+
+import Data.FormURLEncoded (FormURLEncoded, encode, fromArray) as URLEncoded
 
 -- | The effect type for AJAX requests made with Affjax.
 foreign import data AJAX :: !
@@ -63,6 +68,7 @@ type AffjaxRequest a =
   , username :: Maybe String
   , password :: Maybe String
   , withCredentials :: Boolean
+  , queryParams :: Maybe QueryParams
   }
 
 defaultRequest :: AffjaxRequest Unit
@@ -74,6 +80,7 @@ defaultRequest =
   , username: Nothing
   , password: Nothing
   , withCredentials: false
+  , queryParams: Nothing
   }
 
 -- | The type of records that will be received as an Affjax response.
@@ -85,6 +92,9 @@ type AffjaxResponse a =
 
 -- | Type alias for URL strings to aid readability of types.
 type URL = String
+
+-- | Query params are encoded as well as FormURLEncoded
+type QueryParams = URLEncoded.FormURLEncoded
 
 -- | Makes an `Affjax` request.
 affjax :: forall e a b. (Requestable a, Respondable b) => AffjaxRequest a -> Affjax e b
@@ -214,7 +224,7 @@ affjax' req eb cb =
 
   req' :: AjaxRequest
   req' = { method: methodToString req.method
-         , url: req.url
+         , url: addQueryParams req.url req.queryParams
          , headers: (\h -> { field: requestHeaderName h, value: requestHeaderValue h }) <$> headers
          , content: toNullable (snd requestSettings)
          , responseType: responseTypeToString (snd responseSettings)
@@ -251,6 +261,28 @@ affjax' req eb cb =
   fromResponse' = case snd responseSettings of
     JSONResponse -> fromResponse <=< parseJSON <=< readString
     _ -> fromResponse
+  
+  addQueryParams :: URL -> Maybe QueryParams -> URL
+  addQueryParams url qp = case qp of
+    Just f -> if String.contains "?" url
+              then url ++ "&" ++ (URLEncoded.encode f)
+              else url ++ "?" ++ (URLEncoded.encode f)
+    Nothing -> url
+
+-- |
+-- | Constructs a query params from an array of tuples of parameter - value.
+-- |  
+-- | Example:
+-- |  launchAff $ do
+-- |    res <- affjax 
+-- |      $ defaultRequest
+-- |        { method = GET
+-- |        , url = "http://localhost:3449/something"
+-- |        , queryParams = mkQueryParams [ Tuple "foo" Nothing
+-- |                                      , Tuple "hi" (Just "all")]
+
+mkQueryParams :: (Array (Tuple String (Maybe String))) -> Maybe QueryParams
+mkQueryParams = Just <<< URLEncoded.fromArray
 
 type AjaxRequest =
   { method :: String
