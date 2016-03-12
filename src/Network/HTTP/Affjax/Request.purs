@@ -6,20 +6,19 @@ module Network.HTTP.Affjax.Request
 import Prelude
 
 import Data.Argonaut.Core (Json())
-import Data.Maybe (Maybe(..))
-import Data.Tuple (Tuple(..))
-import qualified Data.ArrayBuffer.Types as A
+import Data.ArrayBuffer.Types as A
 import Data.FormURLEncoded (FormURLEncoded())
-import qualified Data.FormURLEncoded as URLEncoded
+import Data.FormURLEncoded as URLEncoded
+import Data.Maybe (Maybe(..))
+import Data.MediaType (MediaType())
+import Data.MediaType.Common (applicationJSON, applicationFormURLEncoded)
+import Data.Tuple (Tuple(..))
 
 import DOM.File.Types (Blob())
 import DOM.Node.Types (Document())
 import DOM.XHR.Types (FormData())
 
-import qualified Unsafe.Coerce as U
-
-import Network.HTTP.MimeType (MimeType())
-import Network.HTTP.MimeType.Common (applicationJSON, applicationFormURLEncoded)
+import Unsafe.Coerce as U
 
 -- | Type representing all content types that be sent via XHR (ArrayBufferView,
 -- | Blob, Document, String, FormData).
@@ -29,9 +28,9 @@ foreign import data RequestContent :: *
 -- | XHR requests. An optional mime-type can be specified for a default
 -- | `Content-Type` header.
 class Requestable a where
-  toRequest :: a -> Tuple (Maybe MimeType) RequestContent
+  toRequest :: a -> Tuple (Maybe MediaType) RequestContent
 
-defaultToRequest :: forall a. a -> Tuple (Maybe MimeType) RequestContent
+defaultToRequest :: forall a. a -> Tuple (Maybe MediaType) RequestContent
 defaultToRequest = Tuple Nothing <<< U.unsafeCoerce
 
 instance requestableRequestContent :: Requestable RequestContent where

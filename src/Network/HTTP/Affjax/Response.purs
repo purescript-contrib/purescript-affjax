@@ -7,19 +7,18 @@ module Network.HTTP.Affjax.Response
 import Prelude
 
 import Data.Argonaut.Core (Json())
+import Data.ArrayBuffer.Types as A
 import Data.Either (Either(..))
 import Data.Foreign (Foreign(), F(), readString, unsafeReadTagged)
 import Data.Maybe (Maybe(..))
+import Data.MediaType (MediaType())
+import Data.MediaType.Common (applicationJSON)
 import Data.Tuple (Tuple(..))
-import qualified Data.ArrayBuffer.Types as A
 
 import DOM.File.Types (Blob())
 import DOM.Node.Types (Document())
 
 import Unsafe.Coerce (unsafeCoerce)
-
-import Network.HTTP.MimeType (MimeType())
-import Network.HTTP.MimeType.Common (applicationJSON)
 
 -- | Valid response types for an AJAX request. This is used to determine the
 -- | `ResponseContent` type for a request. The `a` type variable is a phantom
@@ -60,7 +59,7 @@ responseTypeToString StringResponse = "text"
 type ResponseContent = Foreign
 
 class Respondable a where
-  responseType :: Tuple (Maybe MimeType) (ResponseType a)
+  responseType :: Tuple (Maybe MediaType) (ResponseType a)
   fromResponse :: ResponseContent -> F a
 
 instance responsableBlob :: Respondable Blob where

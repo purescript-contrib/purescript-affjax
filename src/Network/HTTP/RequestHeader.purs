@@ -2,11 +2,11 @@ module Network.HTTP.RequestHeader where
 
 import Prelude
 
-import Network.HTTP.MimeType
+import Data.MediaType (MediaType(), mediaTypeToString)
 
 data RequestHeader
-  = Accept MimeType
-  | ContentType MimeType
+  = Accept MediaType
+  | ContentType MediaType
   | RequestHeader String String
 
 instance eqRequestHeader :: Eq RequestHeader where
@@ -26,6 +26,6 @@ requestHeaderName (ContentType _) = "Content-Type"
 requestHeaderName (RequestHeader h _) = h
 
 requestHeaderValue :: RequestHeader -> String
-requestHeaderValue (Accept m) = mimeTypeToString m
-requestHeaderValue (ContentType m) = mimeTypeToString m
+requestHeaderValue (Accept m) = mediaTypeToString m
+requestHeaderValue (ContentType m) = mediaTypeToString m
 requestHeaderValue (RequestHeader _ v) = v
