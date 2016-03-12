@@ -29,11 +29,14 @@ import Control.Monad.Error.Class (throwError)
 
 import Data.Array as Arr
 import Data.Either (Either(..), either)
-import Data.Foreign (Foreign(), F(), parseJSON, readString)
 import Data.Foldable (any)
+import Data.Foreign (Foreign(), F(), parseJSON, readString)
 import Data.Function (Fn5(), runFn5, Fn4(), runFn4, on)
+import Data.HTTP.Method (Method(..), CustomMethod())
+import Data.HTTP.Method as Method
 import Data.Int (toNumber, round)
 import Data.Maybe (Maybe(..))
+import Data.MediaType (MediaType())
 import Data.Nullable (Nullable(), toNullable)
 import Data.Tuple (Tuple(..), fst, snd)
 
@@ -43,8 +46,6 @@ import DOM.XHR.Types (XMLHttpRequest())
 
 import Network.HTTP.Affjax.Request
 import Network.HTTP.Affjax.Response
-import Network.HTTP.MimeType (MimeType())
-import Network.HTTP.Method (Method(..), methodToString)
 import Network.HTTP.RequestHeader (RequestHeader(..), requestHeaderName, requestHeaderValue)
 import Network.HTTP.ResponseHeader (ResponseHeader(), responseHeader)
 import Network.HTTP.StatusCode (StatusCode(..))
@@ -56,7 +57,7 @@ foreign import data AJAX :: !
 type Affjax e a = Aff (ajax :: AJAX | e) (AffjaxResponse a)
 
 type AffjaxRequest a =
-  { method :: Method
+  { method :: Either Method CustomMethod
   , url :: URL
   , headers :: Array RequestHeader
   , content :: Maybe a
@@ -67,7 +68,7 @@ type AffjaxRequest a =
 
 defaultRequest :: AffjaxRequest Unit
 defaultRequest =
-  { method: GET
+  { method: Left GET
   , url: "/"
   , headers: []
   , content: Nothing
@@ -96,11 +97,11 @@ get u = affjax $ defaultRequest { url = u }
 
 -- | Makes a `POST` request to the specified URL, sending data.
 post :: forall e a b. (Requestable a, Respondable b) => URL -> a -> Affjax e b
-post u c = affjax $ defaultRequest { method = POST, url = u, content = Just c }
+post u c = affjax $ defaultRequest { method = Left POST, url = u, content = Just c }
 
 -- | Makes a `POST` request to the specified URL with the option to send data.
 post' :: forall e a b. (Requestable a, Respondable b) => URL -> Maybe a -> Affjax e b
-post' u c = affjax $ defaultRequest { method = POST, url = u, content = c }
+post' u c = affjax $ defaultRequest { method = Left POST, url = u, content = c }
 
 -- | Makes a `POST` request to the specified URL, sending data and ignoring the
 -- | response.
@@ -114,11 +115,11 @@ post_' = post'
 
 -- | Makes a `PUT` request to the specified URL, sending data.
 put :: forall e a b. (Requestable a, Respondable b) => URL -> a -> Affjax e b
-put u c = affjax $ defaultRequest { method = PUT, url = u, content = Just c }
+put u c = affjax $ defaultRequest { method = Left PUT, url = u, content = Just c }
 
 -- | Makes a `PUT` request to the specified URL with the option to send data.
 put' :: forall e a b. (Requestable a, Respondable b) => URL -> Maybe a -> Affjax e b
-put' u c = affjax $ defaultRequest { method = PUT, url = u, content = c }
+put' u c = affjax $ defaultRequest { method = Left PUT, url = u, content = c }
 
 -- | Makes a `PUT` request to the specified URL, sending data and ignoring the
 -- | response.
@@ -132,7 +133,7 @@ put_' = put'
 
 -- | Makes a `DELETE` request to the specified URL.
 delete :: forall e a. (Respondable a) => URL -> Affjax e a
-delete u = affjax $ defaultRequest { method = DELETE, url = u }
+delete u = affjax $ defaultRequest { method = Left DELETE, url = u }
 
 -- | Makes a `DELETE` request to the specified URL and ignores the response.
 delete_ :: forall e. URL -> Affjax e Unit
@@ -142,25 +143,30 @@ delete_ = delete
 type RetryDelayCurve = Int -> Int
 
 -- | Expresses a policy for retrying Affjax requests with backoff.
-type RetryPolicy
-  = { timeout :: Maybe Int -- ^ the timeout in milliseconds, optional
-    , delayCurve :: RetryDelayCurve
-    , shouldRetryWithStatusCode :: StatusCode -> Boolean -- ^ whether a non-200 status code should trigger a retry
-    }
+type RetryPolicy =
+  { timeout :: Maybe Int -- ^ the timeout in milliseconds, optional
+  , delayCurve :: RetryDelayCurve
+  , shouldRetryWithStatusCode :: StatusCode -> Boolean -- ^ whether a non-200 status code should trigger a retry
+  }
 
 -- | A sensible default for retries: no timeout, maximum delay of 30s, initial delay of 0.1s, exponential backoff, and no status code triggers a retry.
 defaultRetryPolicy :: RetryPolicy
 defaultRetryPolicy =
   { timeout : Nothing
   , delayCurve : \n -> round $ max (30.0 * 1000.0) $ 100.0 * (pow 2.0 $ toNumber (n - 1))
-  , shouldRetryWithStatusCode : \_ -> false
+  , shouldRetryWithStatusCode : const false
   }
 
 -- | Either we have a failure (which may be an exception or a failed response), or we have a successful response.
 type RetryState e a = Either (Either e a) a
 
 -- | Retry a request using a `RetryPolicy`. After the timeout, the last received response is returned; if it was not possible to communicate with the server due to an error, then this is bubbled up.
-retry :: forall e a b. (Requestable a) => RetryPolicy -> (AffjaxRequest a -> Affjax (avar :: AVAR, ref :: REF | e) b) -> (AffjaxRequest a -> Affjax (avar :: AVAR, ref :: REF | e) b)
+retry
+  :: forall e a b
+   . (Requestable a)
+  => RetryPolicy
+  -> (AffjaxRequest a -> Affjax (avar :: AVAR, ref :: REF | e) b)
+  -> (AffjaxRequest a -> Affjax (avar :: AVAR, ref :: REF | e) b)
 retry policy run req = do
   -- failureRef is either an exception or a failed request
   failureRef <- liftEff $ newRef Nothing
@@ -180,10 +186,12 @@ retry policy run req = do
           failure <- liftEff $ readRef failureRef
           case failure of
             Nothing -> throwError $ error "Timeout"
-            Just failure -> either throwError pure failure
+            Just failure' -> either throwError pure failure'
         Just resp -> pure resp
   where
-    retryState :: Either Error (AffjaxResponse b) -> RetryState Error (AffjaxResponse b)
+    retryState
+      :: Either Error (AffjaxResponse b)
+      -> RetryState Error (AffjaxResponse b)
     retryState (Left exn) = Left $ Left exn
     retryState (Right resp) =
       case resp.status of
@@ -203,32 +211,35 @@ retry policy run req = do
         Right resp -> pure resp
 
 -- | Run a request directly without using `Aff`.
-affjax' :: forall e a b. (Requestable a, Respondable b) =>
-                         AffjaxRequest a ->
-                         (Error -> Eff (ajax :: AJAX | e) Unit) ->
-                         (AffjaxResponse b -> Eff (ajax :: AJAX | e) Unit) ->
-                         Eff (ajax :: AJAX | e) (Canceler (ajax :: AJAX | e))
+affjax'
+  :: forall e a b
+   . (Requestable a, Respondable b)
+  => AffjaxRequest a
+  -> (Error -> Eff (ajax :: AJAX | e) Unit)
+  -> (AffjaxResponse b -> Eff (ajax :: AJAX | e) Unit)
+  -> Eff (ajax :: AJAX | e) (Canceler (ajax :: AJAX | e))
 affjax' req eb cb =
   runFn5 _ajax responseHeader req' cancelAjax eb cb'
   where
 
   req' :: AjaxRequest
-  req' = { method: methodToString req.method
-         , url: req.url
-         , headers: (\h -> { field: requestHeaderName h, value: requestHeaderValue h }) <$> headers
-         , content: toNullable (snd requestSettings)
-         , responseType: responseTypeToString (snd responseSettings)
-         , username: toNullable req.username
-         , password: toNullable req.password
-         , withCredentials: req.withCredentials
-         }
+  req' =
+    { method: Method.print req.method
+    , url: req.url
+    , headers: (\h -> { field: requestHeaderName h, value: requestHeaderValue h }) <$> headers
+    , content: toNullable (snd requestSettings)
+    , responseType: responseTypeToString (snd responseSettings)
+    , username: toNullable req.username
+    , password: toNullable req.password
+    , withCredentials: req.withCredentials
+    }
 
-  requestSettings :: Tuple (Maybe MimeType) (Maybe RequestContent)
+  requestSettings :: Tuple (Maybe MediaType) (Maybe RequestContent)
   requestSettings = case toRequest <$> req.content of
     Nothing -> Tuple Nothing Nothing
     Just (Tuple mime rt) -> Tuple mime (Just rt)
 
-  responseSettings :: Tuple (Maybe MimeType) (ResponseType b)
+  responseSettings :: Tuple (Maybe MediaType) (ResponseType b)
   responseSettings = responseType
 
   headers :: Array RequestHeader

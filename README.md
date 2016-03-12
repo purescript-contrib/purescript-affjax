@@ -41,23 +41,10 @@ main = launchAff $ do
   liftEff $ log $ "POST /api response: " ++ res2.response
 ```
 
-See the module documentation for a [full list of these helpers](docs/Network.HTTP.Affjax.md#get).
+See the module documentation for a full list of these helpers.
 
-When sending data in a request the [`Requestable`](docs/Network.HTTP.Affjax.Request.md#requestable) class enables automatic conversion into a format that is acceptable for an XHR request. Correspondingly there is a [`Respondable`](docs/Network.HTTP.Affjax.Response.md#respondable) class for reading data that comes back from the server.
+When sending data in a request the Requestable class enables automatic conversion into a format that is acceptable for an XHR request. Correspondingly there is a Respondable class for reading data that comes back from the server.
 
 ## Module documentation
 
-- [Network.HTTP.Affjax](docs/Network.HTTP.Affjax.md)
-- [Network.HTTP.Affjax.Request](docs/Network.HTTP.Affjax.Request.md)
-- [Network.HTTP.Affjax.Response](docs/Network.HTTP.Affjax.Response.md)
-
-### General HTTP
-
-Note: these values and types will most likely be moved into separate libraries at a later date.
-
-- [Network.HTTP.Method](docs/Network.HTTP.Method.md)
-- [Network.HTTP.RequestHeader](docs/Network.HTTP.RequestHeader.md)
-- [Network.HTTP.ResponseHeader](docs/Network.HTTP.ResponseHeader.md)
-- [Network.HTTP.MimeType](docs/Network.HTTP.MimeType.md)
-- [Network.HTTP.MimeType.Common](docs/Network.HTTP.MimeType.Common.md)
-- [Network.HTTP.StatusCode](docs/Network.HTTP.StatusCode.md)
+Module documentation is [published on Pursuit](http://pursuit.purescript.org/packages/purescript-affjax).

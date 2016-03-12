@@ -2,18 +2,20 @@ module Test.Main where
 
 import Prelude
 
+import Control.Bind
 import Control.Monad.Aff
 import Control.Monad.Aff.AVar (AVAR())
-import Control.Bind
+import Control.Monad.Aff.Console as A
 import Control.Monad.Eff
 import Control.Monad.Eff.Class
-import Control.Monad.Eff.Ref (REF())
 import Control.Monad.Eff.Console (CONSOLE(), log, print)
-import qualified Control.Monad.Aff.Console as A
 import Control.Monad.Eff.Exception
+import Control.Monad.Eff.Ref (REF())
+
 import Data.Either
-import Data.Maybe
 import Data.Foreign
+import Data.Maybe
+
 import Network.HTTP.Affjax
 import Network.HTTP.StatusCode
 
