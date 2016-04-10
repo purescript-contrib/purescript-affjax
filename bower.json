@@ -26,7 +26,7 @@
     "purescript-aff": "^0.16.0",
     "purescript-argonaut-core": "^0.2.0",
     "purescript-arraybuffer-types": "^0.2.0",
-    "purescript-dom": "^0.2.0",
+    "purescript-dom": "^0.2.20",
     "purescript-foreign": "^0.7.0",
     "purescript-form-urlencoded": "^0.3.0",
     "purescript-http-methods": "^0.1.1",
