@@ -6,6 +6,8 @@ module Network.HTTP.Affjax
   , URL()
   , affjax
   , affjax'
+  , customAffjax
+  , customAffjax'
   , get
   , post, post_, post', post_'
   , put, put_, put', put_'
@@ -18,7 +20,7 @@ module Network.HTTP.Affjax
 
 import Prelude
 
-import Control.Bind ((<=<))
+import Control.Bind ((<=<), (=<<))
 import Control.Monad.Aff (Aff(), makeAff, makeAff', Canceler(..), attempt, later', forkAff, cancel)
 import Control.Monad.Aff.AVar (AVAR(), makeVar, takeVar, putVar)
 import Control.Monad.Eff (Eff())
@@ -31,7 +33,7 @@ import Data.Array as Arr
 import Data.Either (Either(..), either)
 import Data.Foldable (any)
 import Data.Foreign (Foreign(), F(), parseJSON, readString)
-import Data.Function (Fn5(), runFn5, Fn4(), runFn4, on)
+import Data.Function (Fn1(), runFn1, Fn4(), runFn4, on)
 import Data.HTTP.Method (Method(..), CustomMethod())
 import Data.HTTP.Method as Method
 import Data.Int (toNumber, round)
@@ -55,6 +57,14 @@ foreign import data AJAX :: !
 
 -- | The type for Affjax requests.
 type Affjax e a = Aff (ajax :: AJAX | e) (AffjaxResponse a)
+
+-- | The type for prepared Affjax requests.
+newtype PreparedAffjax a b = PreparedAffjax PreparedXhr
+
+-- | The internal type for prepared XHR requests.
+type PreparedXhr = { xhr     :: XMLHttpRequest
+                   , options :: AjaxRequest
+                   }
 
 type AffjaxRequest a =
   { method :: Either Method CustomMethod
@@ -90,6 +100,17 @@ type URL = String
 -- | Makes an `Affjax` request.
 affjax :: forall e a b. (Requestable a, Respondable b) => AffjaxRequest a -> Affjax e b
 affjax = makeAff' <<< affjax'
+
+-- | Makes a customizable `Affjax` request.
+-- | The customizer function allows for inspecting and manipulating
+-- | the underlying `XMLHttpRequest` before it is sent.
+customAffjax
+  :: forall e a b
+   . (Requestable a, Respondable b)
+  => AffjaxRequest a
+  -> (XMLHttpRequest -> Eff (ajax :: AJAX | e) Unit)
+  -> Affjax e b
+customAffjax req = makeAff' <<< customAffjax' req
 
 -- | Makes a `GET` request to the specified URL.
 get :: forall e a. (Respondable a) => URL -> Affjax e a
@@ -218,8 +239,54 @@ affjax'
   -> (Error -> Eff (ajax :: AJAX | e) Unit)
   -> (AffjaxResponse b -> Eff (ajax :: AJAX | e) Unit)
   -> Eff (ajax :: AJAX | e) (Canceler (ajax :: AJAX | e))
-affjax' req eb cb =
-  runFn5 _ajax responseHeader req' cancelAjax eb cb'
+affjax' req = customAffjax' req (const (pure unit))
+
+-- | Run a customizable request directly without using `Aff`.
+-- | The customizer function allows for inspecting and manipulating
+-- | the underlying `XMLHttpRequest` before it is sent.
+customAffjax'
+  :: forall e a b
+   . (Requestable a, Respondable b)
+  => AffjaxRequest a
+  -> (XMLHttpRequest -> Eff (ajax :: AJAX | e) Unit)
+  -> (Error -> Eff (ajax :: AJAX | e) Unit)
+  -> (AffjaxResponse b -> Eff (ajax :: AJAX | e) Unit)
+  -> Eff (ajax :: AJAX | e) (Canceler (ajax :: AJAX | e))
+customAffjax' req f eb cb = do
+  pa <- prepareAffjax req
+  f (getXhr pa)
+  wirePreparedAffjax pa eb cb
+  executePreparedAffjax pa
+
+-- | Execute an unwired prepared request in the `Aff` monad.
+preparedAffjax
+  :: forall e a b c
+   . (Respondable b)
+  => PreparedAffjax a c
+  -> Affjax e b
+preparedAffjax pReq =
+  makeAff' \eb cb -> executePreparedAffjax =<< wirePreparedAffjax pReq eb cb
+
+-- | Execute (i.e. send) a prepared (and possibly wired) request.
+executePreparedAffjax
+  :: forall e a b
+   . PreparedAffjax a b
+  -> Eff (ajax :: AJAX | e) (Canceler (ajax :: AJAX | e))
+executePreparedAffjax (PreparedAffjax pa) = do
+  runFn1 _sendPXhr pa
+  pure $ cancelAjax pa.xhr
+
+-- | Extract the underlying `XMLHttpRequest` from a prepared request.
+getXhr :: forall a b. PreparedAffjax a b -> XMLHttpRequest
+getXhr (PreparedAffjax pa) = pa.xhr
+
+-- | Prepare a new request.
+prepareAffjax
+  :: forall e a
+   . (Requestable a)
+  => AffjaxRequest a
+  -> Eff (ajax :: AJAX | e) (PreparedAffjax a Unit)
+prepareAffjax req = PreparedAffjax <$> runFn1 _prepareXhr req'
   where
 
   req' :: AjaxRequest
@@ -239,7 +306,7 @@ affjax' req eb cb =
     Nothing -> Tuple Nothing Nothing
     Just (Tuple mime rt) -> Tuple mime (Just rt)
 
-  responseSettings :: Tuple (Maybe MediaType) (ResponseType b)
+  responseSettings :: Tuple (Maybe MediaType) (ResponseType Unit)
   responseSettings = responseType
 
   headers :: Array RequestHeader
@@ -253,6 +320,20 @@ affjax' req eb cb =
     Just h | not $ any (on eq requestHeaderName h) hs -> hs `Arr.snoc` h
     _ -> hs
 
+-- | Wire callbacks for a prepared request.
+wirePreparedAffjax
+  :: forall e a b c
+   . (Respondable b)
+  => (PreparedAffjax a c)
+  -> (Error -> Eff (ajax :: AJAX | e) Unit)
+  -> (AffjaxResponse b -> Eff (ajax :: AJAX | e) Unit)
+  -> Eff (ajax :: AJAX | e) (PreparedAffjax a b)
+wirePreparedAffjax (PreparedAffjax pXhr) eb cb = do
+  runFn4 _wirePXhrCallbacks responseHeader pXhr eb cb'
+  return $ PreparedAffjax pXhr
+
+  where
+
   cb' :: AffjaxResponse ResponseContent -> Eff (ajax :: AJAX | e) Unit
   cb' res = case res { response = _  } <$> fromResponse' res.response of
     Left err -> eb $ error (show err)
@@ -262,6 +343,21 @@ affjax' req eb cb =
   fromResponse' = case snd responseSettings of
     JSONResponse -> fromResponse <=< parseJSON <=< readString
     _ -> fromResponse
+
+  responseSettings :: Tuple (Maybe MediaType) (ResponseType b)
+  responseSettings = responseType
+
+-- | Prepare and wire a request for sending.
+prepareAffjax'
+  :: forall e a b
+   . (Requestable a, Respondable b)
+  => AffjaxRequest a
+  -> (Error -> Eff (ajax :: AJAX | e) Unit)
+  -> (AffjaxResponse b -> Eff (ajax :: AJAX | e) Unit)
+  -> Eff (ajax :: AJAX | e) (PreparedAffjax a b)
+prepareAffjax' req eb cb = do
+  pa <- prepareAffjax req
+  wirePreparedAffjax pa eb cb
 
 type AjaxRequest =
   { method :: String
@@ -274,13 +370,20 @@ type AjaxRequest =
   , withCredentials :: Boolean
   }
 
-foreign import _ajax
-  :: forall e. Fn5 (String -> String -> ResponseHeader)
-               AjaxRequest
-               (XMLHttpRequest -> Canceler (ajax :: AJAX | e))
+foreign import _prepareXhr
+  :: forall e. Fn1 AjaxRequest
+               (Eff (ajax :: AJAX | e) PreparedXhr)
+
+foreign import _wirePXhrCallbacks
+  :: forall e. Fn4 (String -> String -> ResponseHeader)
+               PreparedXhr
                (Error -> Eff (ajax :: AJAX | e) Unit)
                (AffjaxResponse Foreign -> Eff (ajax :: AJAX | e) Unit)
-               (Eff (ajax :: AJAX | e) (Canceler (ajax :: AJAX | e)))
+               (Eff (ajax :: AJAX | e) Unit)
+
+foreign import _sendPXhr
+  :: forall e. Fn1 PreparedXhr
+               (Eff (ajax :: AJAX | e) Unit)
 
 cancelAjax :: forall e. XMLHttpRequest -> Canceler (ajax :: AJAX | e)
 cancelAjax xhr = Canceler \err -> makeAff (\eb cb -> runFn4 _cancelAjax xhr err eb cb)

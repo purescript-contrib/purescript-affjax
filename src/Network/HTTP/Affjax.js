@@ -5,8 +5,8 @@
 
 // module Network.HTTP.Affjax
 
-// jshint maxparams: 5
-exports._ajax = function (mkHeader, options, canceler, errback, callback) {
+// jshint maxparams: 1
+exports._prepareXhr = function (options) {
   var platformSpecific = { };
   if (typeof module !== "undefined" && module.require) {
     // We are on node.js
@@ -22,10 +22,6 @@ exports._ajax = function (mkHeader, options, canceler, errback, callback) {
       u.hostname = u.hostname || "localhost";
       return urllib.format(u);
     };
-
-    platformSpecific.getResponse = function (xhr) {
-      return xhr.response;
-    };
   } else {
     // We are in the browser
     platformSpecific.newXHR = function () {
@@ -35,26 +31,27 @@ exports._ajax = function (mkHeader, options, canceler, errback, callback) {
     platformSpecific.fixupUrl = function (url) {
       return url || "/";
     };
-
-    platformSpecific.getResponse = function (xhr) {
-      return xhr.response;
-    };
   }
 
   return function () {
     var xhr = platformSpecific.newXHR();
-    var fixedUrl = platformSpecific.fixupUrl(options.url);
-    xhr.open(options.method || "GET", fixedUrl, true, options.username, options.password);
-    if (options.headers) {
-      try {
-        for (var i = 0, header; (header = options.headers[i]) != null; i++) {
-          xhr.setRequestHeader(header.field, header.value);
-        }
-      }
-      catch (e) {
-        errback(e)();
-      }
-    }
+    xhr.responseType = options.responseType;
+    xhr.withCredentials = options.withCredentials;
+
+    return {
+      xhr: xhr,
+      options: options
+    };
+  };
+};
+
+// jshint maxparams: 4
+exports._wirePXhrCallbacks = function (mkHeader, pXhr, errback, callback) {
+  return function () {
+    var xhr = pXhr.xhr;
+    var options = pXhr.options;
+
+    options.errback = errback;
     xhr.onerror = function () {
       errback(new Error("AJAX request failed: " + options.method + " " + options.url))();
     };
@@ -69,13 +66,53 @@ exports._ajax = function (mkHeader, options, canceler, errback, callback) {
             var i = header.indexOf(":");
             return mkHeader(header.substring(0, i))(header.substring(i + 2));
           }),
-        response: platformSpecific.getResponse(xhr)
+        response: xhr.response
       })();
     };
-    xhr.responseType = options.responseType;
-    xhr.withCredentials = options.withCredentials;
+  };
+};
+
+// jshint maxparams: 1
+exports._sendPXhr = function (pXhr) {
+  var platformSpecific = { };
+  if (typeof module !== "undefined" && module.require) {
+    // We are on node.js
+    platformSpecific.fixupUrl = function (url) {
+      var urllib = module.require("url");
+      var u = urllib.parse(url);
+      u.protocol = u.protocol || "http:";
+      u.hostname = u.hostname || "localhost";
+      return urllib.format(u);
+    };
+  } else {
+    // We are in the browser
+    platformSpecific.fixupUrl = function (url) {
+      return url || "/";
+    };
+  }
+
+  return function () {
+    var xhr = pXhr.xhr;
+    var options = pXhr.options;
+
+    var fixedUrl = platformSpecific.fixupUrl(options.url);
+    xhr.open(options.method || "GET", fixedUrl, true, options.username, options.password);
+    if (options.headers) {
+      try {
+        for (var i = 0, header; (header = options.headers[i]) != null; i++) {
+          xhr.setRequestHeader(header.field, header.value);
+        }
+      }
+      catch (e) {
+        if (typeof options.errback === "function") {
+          options.errback(e)();
+        } else {
+          throw e;
+        }
+      }
+    }
+
     xhr.send(options.content);
-    return canceler(xhr);
   };
 };
 

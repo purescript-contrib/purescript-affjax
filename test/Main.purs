@@ -121,3 +121,8 @@ main = runAff (\e -> print e >>= \_ -> throwException e) (const $ log "affjax: A
   canceler <- forkAff (post_ mirror "do it now")
   canceled <- canceler `cancel` error "Pull the cord!"
   assertMsg "Should have been canceled" canceled
+
+  A.log "Customized GET /mirror: should be 200 OK"
+  (attempt $ customAffjax (defaultRequest { url = mirror }) $ const (pure unit)) >>= assertRight >>= \res -> do
+    typeIs (res :: AffjaxResponse Foreign)
+    assertEq ok200 res.status
