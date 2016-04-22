@@ -20,7 +20,7 @@ module Network.HTTP.Affjax
 
 import Prelude
 
-import Control.Bind ((<=<), (=<<))
+import Control.Bind ((<=<))
 import Control.Monad.Aff (Aff(), makeAff, makeAff', Canceler(..), attempt, later', forkAff, cancel)
 import Control.Monad.Aff.AVar (AVAR(), makeVar, takeVar, putVar)
 import Control.Monad.Eff (Eff())
@@ -257,15 +257,6 @@ customAffjax' req f eb cb = do
   f (getXhr pa)
   wirePreparedAffjax pa eb cb
   executePreparedAffjax pa
-
--- | Execute an unwired prepared request in the `Aff` monad.
-preparedAffjax
-  :: forall e a b c
-   . (Respondable b)
-  => PreparedAffjax a c
-  -> Affjax e b
-preparedAffjax pReq =
-  makeAff' \eb cb -> executePreparedAffjax =<< wirePreparedAffjax pReq eb cb
 
 -- | Execute (i.e. send) a prepared (and possibly wired) request.
 executePreparedAffjax
