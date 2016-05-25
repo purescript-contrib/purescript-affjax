@@ -25,8 +25,18 @@ npm install xhr2
 You can construct requests with the `affjax` function:
 
 ```purescript
+module Main where
+
+import Prelude
+import Control.Monad.Eff.Console (log)
+import Control.Monad.Eff.Class (liftEff)
+import Control.Monad.Aff (launchAff)
+import Data.Either (Either(..))
+import Data.HTTP.Method (Method(..))
+import Network.HTTP.Affjax (affjax, defaultRequest)
+
 main = launchAff $ do
-  res <- affjax $ defaultRequest { url = "/api", method = GET }
+  res <- affjax $ defaultRequest { url = "/api", method = Left GET }
   liftEff $ log $ "GET /api response: " ++ res.response
 ```
 
@@ -35,6 +45,8 @@ main = launchAff $ do
 Or use of a number of helpers for common cases:
 
 ```purescript
+import Network.HTTP.Affjax (get, post)
+
 main = launchAff $ do
   res1 <- get "/api"
   liftEff $ log $ "GET /api response: " ++ res1.response
