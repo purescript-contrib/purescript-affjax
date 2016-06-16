@@ -8,4 +8,4 @@ instance eqStatusCode :: Eq StatusCode where
   eq (StatusCode x) (StatusCode y) = x == y
 
 instance showStatusCode :: Show StatusCode where
-  show (StatusCode code) = "(StatusCode " ++ show code ++ ")"
+  show (StatusCode code) = "(StatusCode " <> show code <> ")"

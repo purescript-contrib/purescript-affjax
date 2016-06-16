@@ -16,7 +16,7 @@ module Network.HTTP.Affjax
   , retry
   ) where
 
-import Prelude
+import Prelude hiding (max)
 
 import Control.Bind ((<=<))
 import Control.Monad.Aff (Aff(), makeAff, makeAff', Canceler(..), attempt, later', forkAff, cancel)
@@ -31,7 +31,8 @@ import Data.Array as Arr
 import Data.Either (Either(..), either)
 import Data.Foldable (any)
 import Data.Foreign (Foreign(), F(), parseJSON, readString)
-import Data.Function (Fn5(), runFn5, Fn4(), runFn4, on)
+import Data.Function (on)
+import Data.Function.Uncurried (Fn5(), runFn5, Fn4(), runFn4)
 import Data.HTTP.Method (Method(..), CustomMethod())
 import Data.HTTP.Method as Method
 import Data.Int (toNumber, round)
@@ -44,8 +45,8 @@ import Math (max, pow)
 
 import DOM.XHR.Types (XMLHttpRequest())
 
-import Network.HTTP.Affjax.Request
-import Network.HTTP.Affjax.Response
+import Network.HTTP.Affjax.Request (class Requestable, RequestContent, toRequest)
+import Network.HTTP.Affjax.Response (class Respondable, ResponseContent, ResponseType(..), fromResponse, responseType, responseTypeToString)
 import Network.HTTP.RequestHeader (RequestHeader(..), requestHeaderName, requestHeaderValue)
 import Network.HTTP.ResponseHeader (ResponseHeader(), responseHeader)
 import Network.HTTP.StatusCode (StatusCode(..))

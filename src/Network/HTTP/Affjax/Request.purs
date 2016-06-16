@@ -1,6 +1,6 @@
 module Network.HTTP.Affjax.Request
   ( RequestContent()
-  , Requestable, toRequest
+  , class Requestable, toRequest
   ) where
 
 import Prelude
