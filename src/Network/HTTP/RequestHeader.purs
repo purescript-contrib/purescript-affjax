@@ -2,7 +2,7 @@ module Network.HTTP.RequestHeader where
 
 import Prelude
 
-import Data.MediaType (MediaType(), mediaTypeToString)
+import Data.MediaType (MediaType(), unMediaType)
 
 data RequestHeader
   = Accept MediaType
@@ -16,9 +16,9 @@ instance eqRequestHeader :: Eq RequestHeader where
   eq _ _ = false
 
 instance showRequestHeader :: Show RequestHeader where
-  show (Accept m) = "(Accept " ++ show m ++ ")"
-  show (ContentType m) = "(ContentType " ++ show m ++ ")"
-  show (RequestHeader h v) = "(RequestHeader " ++ show h ++ " " ++ show v ++ ")"
+  show (Accept m) = "(Accept " <> show m <> ")"
+  show (ContentType m) = "(ContentType " <> show m <> ")"
+  show (RequestHeader h v) = "(RequestHeader " <> show h <> " " <> show v <> ")"
 
 requestHeaderName :: RequestHeader -> String
 requestHeaderName (Accept _) = "Accept"
@@ -26,6 +26,6 @@ requestHeaderName (ContentType _) = "Content-Type"
 requestHeaderName (RequestHeader h _) = h
 
 requestHeaderValue :: RequestHeader -> String
-requestHeaderValue (Accept m) = mediaTypeToString m
-requestHeaderValue (ContentType m) = mediaTypeToString m
+requestHeaderValue (Accept m) = unMediaType m
+requestHeaderValue (ContentType m) = unMediaType m
 requestHeaderValue (RequestHeader _ v) = v

@@ -1,7 +1,7 @@
 module Network.HTTP.Affjax.Response
   ( ResponseType(..), responseTypeToString
   , ResponseContent()
-  , Respondable, responseType, fromResponse
+  , class Respondable, responseType, fromResponse
   ) where
 
 import Prelude

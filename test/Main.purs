@@ -8,7 +8,7 @@ import Control.Monad.Aff.AVar (AVAR())
 import Control.Monad.Aff.Console as A
 import Control.Monad.Eff
 import Control.Monad.Eff.Class
-import Control.Monad.Eff.Console (CONSOLE(), log, print)
+import Control.Monad.Eff.Console (CONSOLE(), log, logShow)
 import Control.Monad.Eff.Exception
 import Control.Monad.Eff.Ref (REF())
 
@@ -32,27 +32,27 @@ assertFail msg = let e = error msg
                  in makeAff \errback _ -> errback e
 
 assertMsg :: forall e. String -> Boolean -> Assert e Unit
-assertMsg _   true  = return unit
+assertMsg _   true  = pure unit
 assertMsg msg false = assertFail msg
 
 assertRight :: forall e a b. Either a b -> Assert e b
 assertRight x = case x of
   Left y -> logAny' y >>= \_ -> assertFail "Expected a Right value"
-  Right y -> return y
+  Right y -> pure y
 
 assertLeft :: forall e a b. Either a b -> Assert e a
 assertLeft x = case x of
   Right y -> logAny' y >>= \_ -> assertFail "Expected a Left value"
-  Left y -> return y
+  Left y -> pure y
 
 assertEq :: forall e a. (Eq a, Show a) => a -> a -> Assert e Unit
 assertEq x y = if x == y
-                 then return unit
+                 then pure unit
                  else assertFail $ "Expected " <> show x <> ", got " <> show y
 
 -- | For helping type inference
 typeIs :: forall e a. a -> Assert e Unit
-typeIs = const (return unit)
+typeIs = const (pure unit)
 
 type MainEffects e =
   ( ref :: REF
@@ -63,7 +63,7 @@ type MainEffects e =
   )
 
 main :: Eff (MainEffects (ajax :: AJAX)) Unit
-main = runAff (\e -> print e >>= \_ -> throwException e) (const $ log "affjax: All good!") $ do
+main = void $ runAff (\e -> logShow e >>= \_ -> throwException e) (const $ log "affjax: All good!") $ do
   let ok200 = StatusCode 200
   let notFound404 = StatusCode 404
 
