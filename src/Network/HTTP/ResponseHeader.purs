@@ -6,8 +6,11 @@ module Network.HTTP.ResponseHeader
   ) where
 
 import Prelude
+import Data.Generic (class Generic)
 
 data ResponseHeader = ResponseHeader String String
+
+derive instance genericResponseHeader :: Generic ResponseHeader
 
 responseHeader :: String -> String -> ResponseHeader
 responseHeader field value = ResponseHeader field value
