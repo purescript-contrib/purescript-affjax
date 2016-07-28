@@ -10,6 +10,7 @@ module Network.HTTP.Affjax
   , post, post_, post', post_'
   , put, put_, put', put_'
   , delete, delete_
+  , patch, patch_, patch', patch_'
   , RetryDelayCurve()
   , RetryPolicy(..)
   , defaultRetryPolicy
@@ -139,6 +140,24 @@ delete u = affjax $ defaultRequest { method = Left DELETE, url = u }
 -- | Makes a `DELETE` request to the specified URL and ignores the response.
 delete_ :: forall e. URL -> Affjax e Unit
 delete_ = delete
+
+-- | Makes a `PATCH` request to the specified URL, sending data.
+patch :: forall e a b. (Requestable a, Respondable b) => URL -> a -> Affjax e b
+patch u c = affjax $ defaultRequest { method = Left PATCH, url = u, content = Just c }
+
+-- | Makes a `PATCH` request to the specified URL with the option to send data.
+patch' :: forall e a b. (Requestable a, Respondable b) => URL -> Maybe a -> Affjax e b
+patch' u c = affjax $ defaultRequest { method = Left PATCH, url = u, content = c }
+
+-- | Makes a `PATCH` request to the specified URL, sending data and ignoring the
+-- | response.
+patch_ :: forall e a. (Requestable a) => URL -> a -> Affjax e Unit
+patch_ = patch
+
+-- | Makes a `PATCH` request to the specified URL with the option to send data,
+-- | and ignores the response.
+patch_' :: forall e a. (Requestable a) => URL -> Maybe a -> Affjax e Unit
+patch_' = patch'
 
 -- | A sequence of retry delays, in milliseconds.
 type RetryDelayCurve = Int -> Int
@@ -292,4 +311,3 @@ foreign import _cancelAjax
                    (Error -> Eff (ajax :: AJAX | e) Unit)
                    (Boolean -> Eff (ajax :: AJAX | e) Unit)
                    (Eff (ajax :: AJAX | e) Unit)
-
