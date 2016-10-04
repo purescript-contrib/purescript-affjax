@@ -37,7 +37,7 @@ import Network.HTTP.Affjax (affjax, defaultRequest)
 
 main = launchAff $ do
   res <- affjax $ defaultRequest { url = "/api", method = Left GET }
-  liftEff $ log $ "GET /api response: " ++ res.response
+  liftEff $ log $ "GET /api response: " <> res.response
 ```
 
 (`defaultRequest` is a record value that has all the required fields pre-set for convenient overriding when making a request.)
@@ -49,10 +49,10 @@ import Network.HTTP.Affjax (get, post)
 
 main = launchAff $ do
   res1 <- get "/api"
-  liftEff $ log $ "GET /api response: " ++ res1.response
+  liftEff $ log $ "GET /api response: " <> res1.response
 
   res2 <- post "/api" someData
-  liftEff $ log $ "POST /api response: " ++ res2.response
+  liftEff $ log $ "POST /api response: " <> res2.response
 ```
 
 See the module documentation for a full list of these helpers.
