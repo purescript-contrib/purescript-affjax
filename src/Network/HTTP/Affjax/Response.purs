@@ -20,6 +20,8 @@ import DOM.Node.Types (Document())
 
 import Unsafe.Coerce (unsafeCoerce)
 
+import Control.Monad.Except (except, runExcept)
+
 -- | Valid response types for an AJAX request. This is used to determine the
 -- | `ResponseContent` type for a request. The `a` type variable is a phantom
 -- | type used to associate the `ResponseType` with a particular instance of
@@ -80,7 +82,7 @@ instance responsableString :: Respondable String where
 
 instance responsableUnit :: Respondable Unit where
   responseType = Tuple Nothing StringResponse
-  fromResponse = const (Right unit)
+  fromResponse = const (except (Right unit))
 
 instance responsableArrayBuffer :: Respondable A.ArrayBuffer where
   responseType = Tuple Nothing ArrayBufferResponse
