@@ -2,7 +2,8 @@ module Network.HTTP.RequestHeader where
 
 import Prelude
 
-import Data.MediaType (MediaType(), unMediaType)
+import Data.MediaType (MediaType())
+import Data.Newtype (unwrap)
 
 data RequestHeader
   = Accept MediaType
@@ -26,6 +27,6 @@ requestHeaderName (ContentType _) = "Content-Type"
 requestHeaderName (RequestHeader h _) = h
 
 requestHeaderValue :: RequestHeader -> String
-requestHeaderValue (Accept m) = unMediaType m
-requestHeaderValue (ContentType m) = unMediaType m
+requestHeaderValue (Accept m) = unwrap m
+requestHeaderValue (ContentType m) = unwrap m
 requestHeaderValue (RequestHeader _ v) = v
