@@ -1,26 +1,23 @@
 module Network.HTTP.Affjax.Response
   ( ResponseType(..), responseTypeToString
-  , ResponseContent()
+  , ResponseContent
   , class Respondable, responseType, fromResponse
   ) where
 
 import Prelude
 
-import Data.Argonaut.Core (Json())
+import Data.Argonaut.Core (Json)
 import Data.ArrayBuffer.Types as A
-import Data.Either (Either(..))
-import Data.Foreign (Foreign(), F(), readString, unsafeReadTagged)
+import Data.Foreign (Foreign, F, readString, unsafeReadTagged)
 import Data.Maybe (Maybe(..))
-import Data.MediaType (MediaType())
+import Data.MediaType (MediaType)
 import Data.MediaType.Common (applicationJSON)
 import Data.Tuple (Tuple(..))
 
-import DOM.File.Types (Blob())
-import DOM.Node.Types (Document())
+import DOM.File.Types (Blob)
+import DOM.Node.Types (Document)
 
 import Unsafe.Coerce (unsafeCoerce)
-
-import Control.Monad.Except (except, runExcept)
 
 -- | Valid response types for an AJAX request. This is used to determine the
 -- | `ResponseContent` type for a request. The `a` type variable is a phantom
@@ -74,7 +71,7 @@ instance responsableDocument :: Respondable Document where
 
 instance responsableForeign :: Respondable Foreign where
   responseType = Tuple Nothing JSONResponse
-  fromResponse = Right <<< unsafeCoerce
+  fromResponse = pure <<< unsafeCoerce
 
 instance responsableString :: Respondable String where
   responseType = Tuple Nothing StringResponse
@@ -82,7 +79,7 @@ instance responsableString :: Respondable String where
 
 instance responsableUnit :: Respondable Unit where
   responseType = Tuple Nothing StringResponse
-  fromResponse = const (except (Right unit))
+  fromResponse = const (pure unit)
 
 instance responsableArrayBuffer :: Respondable A.ArrayBuffer where
   responseType = Tuple Nothing ArrayBufferResponse
@@ -90,4 +87,4 @@ instance responsableArrayBuffer :: Respondable A.ArrayBuffer where
 
 instance responsableJson :: Respondable Json where
   responseType = Tuple (Just applicationJSON) JSONResponse
-  fromResponse = Right <<< unsafeCoerce
+  fromResponse = pure <<< unsafeCoerce

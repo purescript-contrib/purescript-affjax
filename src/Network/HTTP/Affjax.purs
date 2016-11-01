@@ -1,9 +1,9 @@
 module Network.HTTP.Affjax
-  ( AJAX()
-  , Affjax()
-  , AffjaxRequest(), defaultRequest
-  , AffjaxResponse()
-  , URL()
+  ( AJAX
+  , Affjax
+  , AffjaxRequest, defaultRequest
+  , AffjaxResponse
+  , URL
   , affjax
   , affjax'
   , get
@@ -11,7 +11,7 @@ module Network.HTTP.Affjax
   , put, put_, put', put_'
   , delete, delete_
   , patch, patch_, patch', patch_'
-  , RetryDelayCurve()
+  , RetryDelayCurve
   , RetryPolicy(..)
   , defaultRetryPolicy
   , retry
@@ -19,37 +19,36 @@ module Network.HTTP.Affjax
 
 import Prelude hiding (max)
 
-import Control.Bind ((<=<))
-import Control.Monad.Aff (Aff(), makeAff, makeAff', Canceler(..), attempt, later', forkAff, cancel)
-import Control.Monad.Aff.AVar (AVAR(), makeVar, takeVar, putVar)
-import Control.Monad.Eff (Eff())
+import Control.Monad.Aff (Aff, makeAff, makeAff', Canceler(..), attempt, later', forkAff, cancel)
+import Control.Monad.Aff.AVar (AVAR, makeVar, takeVar, putVar)
+import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Exception (Error(), error)
-import Control.Monad.Eff.Ref (REF(), newRef, readRef, writeRef)
-import Control.Monad.Error.Class (throwError)
+import Control.Monad.Eff.Exception (Error, error)
+import Control.Monad.Eff.Ref (REF, newRef, readRef, writeRef)
+import Control.Monad.Except (runExcept, throwError)
 
 import Data.Array as Arr
 import Data.Either (Either(..), either)
 import Data.Foldable (any)
-import Data.Foreign (Foreign(), F(), parseJSON, readString)
+import Data.Foreign (Foreign, F, parseJSON, readString)
 import Data.Function (on)
-import Data.Function.Uncurried (Fn5(), runFn5, Fn4(), runFn4)
-import Data.HTTP.Method (Method(..), CustomMethod())
+import Data.Function.Uncurried (Fn5, runFn5, Fn4, runFn4)
+import Data.HTTP.Method (Method(..), CustomMethod)
 import Data.HTTP.Method as Method
 import Data.Int (toNumber, round)
 import Data.Maybe (Maybe(..))
-import Data.MediaType (MediaType())
-import Data.Nullable (Nullable(), toNullable)
+import Data.MediaType (MediaType)
+import Data.Nullable (Nullable, toNullable)
 import Data.Tuple (Tuple(..), fst, snd)
 
 import Math (max, pow)
 
-import DOM.XHR.Types (XMLHttpRequest())
+import DOM.XHR.Types (XMLHttpRequest)
 
 import Network.HTTP.Affjax.Request (class Requestable, RequestContent, toRequest)
 import Network.HTTP.Affjax.Response (class Respondable, ResponseContent, ResponseType(..), fromResponse, responseType, responseTypeToString)
 import Network.HTTP.RequestHeader (RequestHeader(..), requestHeaderName, requestHeaderValue)
-import Network.HTTP.ResponseHeader (ResponseHeader(), responseHeader)
+import Network.HTTP.ResponseHeader (ResponseHeader, responseHeader)
 import Network.HTTP.StatusCode (StatusCode(..))
 
 -- | The effect type for AJAX requests made with Affjax.
@@ -274,7 +273,7 @@ affjax' req eb cb =
     _ -> hs
 
   cb' :: AffjaxResponse ResponseContent -> Eff (ajax :: AJAX | e) Unit
-  cb' res = case res { response = _  } <$> fromResponse' res.response of
+  cb' res = case res { response = _  } <$> runExcept (fromResponse' res.response) of
     Left err -> eb $ error (show err)
     Right res' -> cb res'
 
