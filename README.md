@@ -1,8 +1,7 @@
 # purescript-affjax
 
-[![Latest release](http://img.shields.io/bower/v/purescript-affjax.svg)](https://github.com/slamdata/purescript-affjax/releases)
-[![Build Status](https://travis-ci.org/slamdata/purescript-affjax.svg?branch=master)](https://travis-ci.org/slamdata/purescript-affjax)
-[![Dependency Status](https://www.versioneye.com/user/projects/56e38257df573d00495abbe2/badge.svg?style=flat)](https://www.versioneye.com/user/projects/56e38257df573d00495abbe2)
+[![Latest release](http://img.shields.io/github/release/slamdata/purescript-affjax.svg)](https://github.com/slamdata/purescript-affjax/releases)
+[![Build status](https://travis-ci.org/slamdata/purescript-affjax.svg?branch=master)](https://travis-ci.org/slamdata/purescript-affjax)
 
 A library taking advantage of [`purescript-aff`](https://github.com/slamdata/purescript-aff) to enable pain-free asynchronous AJAX requests and response handling.
 
