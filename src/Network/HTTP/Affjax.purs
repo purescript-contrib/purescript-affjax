@@ -268,7 +268,7 @@ affjax' req eb cb =
         req.headers
 
   addHeader :: Maybe RequestHeader -> Array RequestHeader -> Array RequestHeader
-  addHeader h hs = case h of
+  addHeader mh hs = case mh of
     Just h | not $ any (on eq requestHeaderName h) hs -> hs `Arr.snoc` h
     _ -> hs
 
