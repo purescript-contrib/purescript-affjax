@@ -27,11 +27,12 @@ import Control.Monad.Eff.Exception (Error, error)
 import Control.Monad.Eff.Ref (REF, newRef, readRef, writeRef)
 import Control.Monad.Except (runExcept, throwError)
 import DOM.XHR.Types (XMLHttpRequest)
+import Data.Argonaut.Parser (jsonParser)
 import Data.Either (Either(..), either)
 import Data.Foldable (any)
-import Data.Foreign (F, Foreign, ForeignError(..), fail, readString)
+import Data.Foreign (F, Foreign, ForeignError(..), fail, readString, toForeign)
 import Data.Function (on)
-import Data.Function.Uncurried (Fn5, runFn5, Fn4, runFn4, Fn3, runFn3)
+import Data.Function.Uncurried (Fn5, runFn5, Fn4, runFn4)
 import Data.HTTP.Method (Method(..), CustomMethod)
 import Data.Int (toNumber)
 import Data.Maybe (Maybe(..))
@@ -276,7 +277,7 @@ affjax' req eb cb =
     Right res' -> cb res'
 
   parseJSON :: String -> F Foreign
-  parseJSON json = runFn3 _parseJSONImpl (fail <<< JSONError) pure json
+  parseJSON = either (fail <<< JSONError) (pure <<< toForeign) <<< jsonParser
 
   fromResponse' :: ResponseContent -> F b
   fromResponse' = case snd responseSettings of
@@ -311,6 +312,3 @@ foreign import _cancelAjax
                    (Error -> Eff (ajax :: AJAX | e) Unit)
                    (Boolean -> Eff (ajax :: AJAX | e) Unit)
                    (Eff (ajax :: AJAX | e) Unit)
-
-foreign import _parseJSONImpl
-  :: forall r. Fn3 (String -> r) (Foreign -> r) String r

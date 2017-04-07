@@ -88,11 +88,3 @@ exports._cancelAjax = function (xhr, cancelError, errback, callback) {
   };
 };
 
-// jshint maxparams: 3
-exports._parseJSONImpl = function (left, right, str) {
-  try {
-    return right(JSON.parse(str));
-  } catch (e) {
-    return left(e.toString());
-  }
-};
