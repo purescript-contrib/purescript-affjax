@@ -30,7 +30,7 @@ import DOM.XHR.Types (XMLHttpRequest)
 import Data.Argonaut.Parser (jsonParser)
 import Data.Either (Either(..), either)
 import Data.Foldable (any)
-import Data.Foreign (F, Foreign, ForeignError(..), fail, readString, toForeign)
+import Data.Foreign (F, Foreign, ForeignError(JSONError), fail, readString, toForeign)
 import Data.Function (on)
 import Data.Function.Uncurried (Fn5, runFn5, Fn4, runFn4)
 import Data.HTTP.Method (Method(..), CustomMethod)
@@ -90,7 +90,7 @@ affjax :: forall e a b. Requestable a => Respondable b => AffjaxRequest a -> Aff
 affjax = makeAff' <<< affjax'
 
 -- | Makes a `GET` request to the specified URL.
-get :: forall e a. (Respondable a) => URL -> Affjax e a
+get :: forall e a. Respondable a => URL -> Affjax e a
 get u = affjax $ defaultRequest { url = u }
 
 -- | Makes a `POST` request to the specified URL, sending data.
@@ -103,12 +103,12 @@ post' u c = affjax $ defaultRequest { method = Left POST, url = u, content = c }
 
 -- | Makes a `POST` request to the specified URL, sending data and ignoring the
 -- | response.
-post_ :: forall e a. (Requestable a) => URL -> a -> Affjax e Unit
+post_ :: forall e a. Requestable a => URL -> a -> Affjax e Unit
 post_ = post
 
 -- | Makes a `POST` request to the specified URL with the option to send data,
 -- | and ignores the response.
-post_' :: forall e a. (Requestable a) => URL -> Maybe a -> Affjax e Unit
+post_' :: forall e a. Requestable a => URL -> Maybe a -> Affjax e Unit
 post_' = post'
 
 -- | Makes a `PUT` request to the specified URL, sending data.
@@ -121,16 +121,16 @@ put' u c = affjax $ defaultRequest { method = Left PUT, url = u, content = c }
 
 -- | Makes a `PUT` request to the specified URL, sending data and ignoring the
 -- | response.
-put_ :: forall e a. (Requestable a) => URL -> a -> Affjax e Unit
+put_ :: forall e a. Requestable a => URL -> a -> Affjax e Unit
 put_ = put
 
 -- | Makes a `PUT` request to the specified URL with the option to send data,
 -- | and ignores the response.
-put_' :: forall e a. (Requestable a) => URL -> Maybe a -> Affjax e Unit
+put_' :: forall e a. Requestable a => URL -> Maybe a -> Affjax e Unit
 put_' = put'
 
 -- | Makes a `DELETE` request to the specified URL.
-delete :: forall e a. (Respondable a) => URL -> Affjax e a
+delete :: forall e a. Respondable a => URL -> Affjax e a
 delete u = affjax $ defaultRequest { method = Left DELETE, url = u }
 
 -- | Makes a `DELETE` request to the specified URL and ignores the response.
@@ -147,12 +147,12 @@ patch' u c = affjax $ defaultRequest { method = Left PATCH, url = u, content = c
 
 -- | Makes a `PATCH` request to the specified URL, sending data and ignoring the
 -- | response.
-patch_ :: forall e a. (Requestable a) => URL -> a -> Affjax e Unit
+patch_ :: forall e a. Requestable a => URL -> a -> Affjax e Unit
 patch_ = patch
 
 -- | Makes a `PATCH` request to the specified URL with the option to send data,
 -- | and ignores the response.
-patch_' :: forall e a. (Requestable a) => URL -> Maybe a -> Affjax e Unit
+patch_' :: forall e a. Requestable a => URL -> Maybe a -> Affjax e Unit
 patch_' = patch'
 
 -- | A sequence of retry delays, in milliseconds.
@@ -179,7 +179,7 @@ type RetryState e a = Either (Either e a) a
 -- | Retry a request using a `RetryPolicy`. After the timeout, the last received response is returned; if it was not possible to communicate with the server due to an error, then this is bubbled up.
 retry
   :: forall e a b
-   . (Requestable a)
+   . Requestable a
   => RetryPolicy
   -> (AffjaxRequest a -> Affjax (avar :: AVAR, ref :: REF | e) b)
   -> (AffjaxRequest a -> Affjax (avar :: AVAR, ref :: REF | e) b)
@@ -231,7 +231,8 @@ retry policy run req = do
 -- | Run a request directly without using `Aff`.
 affjax'
   :: forall e a b
-   . Requestable a => Respondable b
+   . Requestable a
+  => Respondable b
   => AffjaxRequest a
   -> (Error -> Eff (ajax :: AJAX | e) Unit)
   -> (AffjaxResponse b -> Eff (ajax :: AJAX | e) Unit)
