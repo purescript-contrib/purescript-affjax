@@ -17,42 +17,38 @@ module Network.HTTP.Affjax
   , retry
   ) where
 
-import Prelude hiding (max)
-
-import Control.Monad.Aff (Aff, makeAff, makeAff', Canceler(..), attempt, later', forkAff, cancel)
+import Data.Array as Arr
+import Data.HTTP.Method as Method
+import Control.Monad.Aff (Aff, makeAff, makeAff', Canceler(..), attempt, delay, forkAff, cancel)
 import Control.Monad.Aff.AVar (AVAR, makeVar, takeVar, putVar)
-import Control.Monad.Eff (Eff)
+import Control.Monad.Eff (kind Effect, Eff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Exception (Error, error)
 import Control.Monad.Eff.Ref (REF, newRef, readRef, writeRef)
 import Control.Monad.Except (runExcept, throwError)
-
-import Data.Array as Arr
+import DOM.XHR.Types (XMLHttpRequest)
 import Data.Either (Either(..), either)
 import Data.Foldable (any)
-import Data.Foreign (Foreign, F, parseJSON, readString)
+import Data.Foreign (F, Foreign, ForeignError(..), fail, readString)
 import Data.Function (on)
-import Data.Function.Uncurried (Fn5, runFn5, Fn4, runFn4)
+import Data.Function.Uncurried (Fn5, runFn5, Fn4, runFn4, Fn3, runFn3)
 import Data.HTTP.Method (Method(..), CustomMethod)
-import Data.HTTP.Method as Method
-import Data.Int (toNumber, round)
+import Data.Int (toNumber)
 import Data.Maybe (Maybe(..))
 import Data.MediaType (MediaType)
 import Data.Nullable (Nullable, toNullable)
+import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
-
 import Math (max, pow)
-
-import DOM.XHR.Types (XMLHttpRequest)
-
 import Network.HTTP.Affjax.Request (class Requestable, RequestContent, toRequest)
 import Network.HTTP.Affjax.Response (class Respondable, ResponseContent, ResponseType(..), fromResponse, responseType, responseTypeToString)
 import Network.HTTP.RequestHeader (RequestHeader(..), requestHeaderName, requestHeaderValue)
 import Network.HTTP.ResponseHeader (ResponseHeader, responseHeader)
 import Network.HTTP.StatusCode (StatusCode(..))
+import Prelude hiding (max)
 
 -- | The effect type for AJAX requests made with Affjax.
-foreign import data AJAX :: !
+foreign import data AJAX :: Effect
 
 -- | The type for Affjax requests.
 type Affjax e a = Aff (ajax :: AJAX | e) (AffjaxResponse a)
@@ -89,7 +85,7 @@ type AffjaxResponse a =
 type URL = String
 
 -- | Makes an `Affjax` request.
-affjax :: forall e a b. (Requestable a, Respondable b) => AffjaxRequest a -> Affjax e b
+affjax :: forall e a b. Requestable a => Respondable b => AffjaxRequest a -> Affjax e b
 affjax = makeAff' <<< affjax'
 
 -- | Makes a `GET` request to the specified URL.
@@ -97,11 +93,11 @@ get :: forall e a. (Respondable a) => URL -> Affjax e a
 get u = affjax $ defaultRequest { url = u }
 
 -- | Makes a `POST` request to the specified URL, sending data.
-post :: forall e a b. (Requestable a, Respondable b) => URL -> a -> Affjax e b
+post :: forall e a b. Requestable a => Respondable b => URL -> a -> Affjax e b
 post u c = affjax $ defaultRequest { method = Left POST, url = u, content = Just c }
 
 -- | Makes a `POST` request to the specified URL with the option to send data.
-post' :: forall e a b. (Requestable a, Respondable b) => URL -> Maybe a -> Affjax e b
+post' :: forall e a b. Requestable a => Respondable b => URL -> Maybe a -> Affjax e b
 post' u c = affjax $ defaultRequest { method = Left POST, url = u, content = c }
 
 -- | Makes a `POST` request to the specified URL, sending data and ignoring the
@@ -115,11 +111,11 @@ post_' :: forall e a. (Requestable a) => URL -> Maybe a -> Affjax e Unit
 post_' = post'
 
 -- | Makes a `PUT` request to the specified URL, sending data.
-put :: forall e a b. (Requestable a, Respondable b) => URL -> a -> Affjax e b
+put :: forall e a b. Requestable a => Respondable b => URL -> a -> Affjax e b
 put u c = affjax $ defaultRequest { method = Left PUT, url = u, content = Just c }
 
 -- | Makes a `PUT` request to the specified URL with the option to send data.
-put' :: forall e a b. (Requestable a, Respondable b) => URL -> Maybe a -> Affjax e b
+put' :: forall e a b. Requestable a => Respondable b => URL -> Maybe a -> Affjax e b
 put' u c = affjax $ defaultRequest { method = Left PUT, url = u, content = c }
 
 -- | Makes a `PUT` request to the specified URL, sending data and ignoring the
@@ -141,11 +137,11 @@ delete_ :: forall e. URL -> Affjax e Unit
 delete_ = delete
 
 -- | Makes a `PATCH` request to the specified URL, sending data.
-patch :: forall e a b. (Requestable a, Respondable b) => URL -> a -> Affjax e b
+patch :: forall e a b. Requestable a => Respondable b => URL -> a -> Affjax e b
 patch u c = affjax $ defaultRequest { method = Left PATCH, url = u, content = Just c }
 
 -- | Makes a `PATCH` request to the specified URL with the option to send data.
-patch' :: forall e a b. (Requestable a, Respondable b) => URL -> Maybe a -> Affjax e b
+patch' :: forall e a b. Requestable a => Respondable b => URL -> Maybe a -> Affjax e b
 patch' u c = affjax $ defaultRequest { method = Left PATCH, url = u, content = c }
 
 -- | Makes a `PATCH` request to the specified URL, sending data and ignoring the
@@ -159,11 +155,11 @@ patch_' :: forall e a. (Requestable a) => URL -> Maybe a -> Affjax e Unit
 patch_' = patch'
 
 -- | A sequence of retry delays, in milliseconds.
-type RetryDelayCurve = Int -> Int
+type RetryDelayCurve = Int -> Milliseconds
 
 -- | Expresses a policy for retrying Affjax requests with backoff.
 type RetryPolicy =
-  { timeout :: Maybe Int -- ^ the timeout in milliseconds, optional
+  { timeout :: Maybe Milliseconds -- ^ the timeout in milliseconds, optional
   , delayCurve :: RetryDelayCurve
   , shouldRetryWithStatusCode :: StatusCode -> Boolean -- ^ whether a non-200 status code should trigger a retry
   }
@@ -172,7 +168,7 @@ type RetryPolicy =
 defaultRetryPolicy :: RetryPolicy
 defaultRetryPolicy =
   { timeout : Nothing
-  , delayCurve : \n -> round $ max (30.0 * 1000.0) $ 100.0 * (pow 2.0 $ toNumber (n - 1))
+  , delayCurve : \n -> Milliseconds $ max (30.0 * 1000.0) $ 100.0 * (pow 2.0 $ toNumber (n - 1))
   , shouldRetryWithStatusCode : const false
   }
 
@@ -196,7 +192,8 @@ retry policy run req = do
       respVar <- makeVar
       loopHandle <- forkAff $ loop 1 >>= putVar respVar <<< Just
       timeoutHandle <-
-        forkAff <<< later' timeout $ do
+        forkAff $ do
+          delay timeout
           putVar respVar Nothing
           loopHandle `cancel` error "Cancel"
       result <- takeVar respVar
@@ -226,13 +223,14 @@ retry policy run req = do
       case result of
         Left err -> do
           liftEff $ writeRef failureRef $ Just err
-          later' (policy.delayCurve n) $ go failureRef (n + 1)
+          delay (policy.delayCurve n)
+          go failureRef (n + 1)
         Right resp -> pure resp
 
 -- | Run a request directly without using `Aff`.
 affjax'
   :: forall e a b
-   . (Requestable a, Respondable b)
+   . Requestable a => Respondable b
   => AffjaxRequest a
   -> (Error -> Eff (ajax :: AJAX | e) Unit)
   -> (AffjaxResponse b -> Eff (ajax :: AJAX | e) Unit)
@@ -277,6 +275,9 @@ affjax' req eb cb =
     Left err -> eb $ error (show err)
     Right res' -> cb res'
 
+  parseJSON :: String -> F Foreign
+  parseJSON json = runFn3 _parseJSONImpl (fail <<< JSONError) pure json
+
   fromResponse' :: ResponseContent -> F b
   fromResponse' = case snd responseSettings of
     JSONResponse -> fromResponse <=< parseJSON <=< readString
@@ -310,3 +311,6 @@ foreign import _cancelAjax
                    (Error -> Eff (ajax :: AJAX | e) Unit)
                    (Boolean -> Eff (ajax :: AJAX | e) Unit)
                    (Eff (ajax :: AJAX | e) Unit)
+
+foreign import _parseJSONImpl
+  :: forall r. Fn3 (String -> r) (Foreign -> r) String r
