@@ -1,21 +1,19 @@
 module Test.Main where
 
 import Prelude
-
+import Control.Monad.Aff.Console as A
+import Network.HTTP.Affjax as AX
 import Control.Monad.Aff (Aff, cancel, forkAff, attempt, runAff, makeAff)
 import Control.Monad.Aff.AVar (AVAR)
-import Control.Monad.Aff.Console as A
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (CONSOLE, log, logShow)
 import Control.Monad.Eff.Exception (EXCEPTION, error, throwException)
 import Control.Monad.Eff.Ref (REF)
-
 import Data.Either (Either(..))
 import Data.Foreign (Foreign, unsafeFromForeign)
 import Data.Maybe (Maybe(..))
-
-import Network.HTTP.Affjax as AX
+import Data.Time.Duration (Milliseconds(..))
 import Network.HTTP.StatusCode (StatusCode(..))
 
 foreign import logAny :: forall e a. a -> Eff (console :: CONSOLE | e) Unit
@@ -23,7 +21,7 @@ foreign import logAny :: forall e a. a -> Eff (console :: CONSOLE | e) Unit
 logAny' :: forall e a. a -> Assert e Unit
 logAny' = liftEff <<< logAny
 
-type Assert e a = Aff (err :: EXCEPTION, console :: CONSOLE, ajax :: AX.AJAX | e) a
+type Assert e a = Aff (exception :: EXCEPTION, console :: CONSOLE, ajax :: AX.AJAX | e) a
 
 assertFail :: forall e a. String -> Assert e a
 assertFail msg = makeAff \errback _ -> errback (error msg)
@@ -42,7 +40,7 @@ assertLeft x = case x of
   Right y -> logAny' y >>= \_ -> assertFail "Expected a Left value"
   Left y -> pure y
 
-assertEq :: forall e a. (Eq a, Show a) => a -> a -> Assert e Unit
+assertEq :: forall e a. Eq a => Show a => a -> a -> Assert e Unit
 assertEq x y =
   when (x /= y) $ assertFail $ "Expected " <> show x <> ", got " <> show y
 
@@ -53,7 +51,7 @@ typeIs = const (pure unit)
 type MainEffects e =
   ( ref :: REF
   , avar :: AVAR
-  , err :: EXCEPTION
+  , exception :: EXCEPTION
   , console :: CONSOLE
   | e
   )
@@ -68,7 +66,7 @@ main = void $ runAff (\e -> logShow e >>= \_ -> throwException e) (const $ log "
   let mirror       = prefix "/mirror"
   let doesNotExist = prefix "/does-not-exist"
   let notJson      = prefix "/not-json"
-  let retryPolicy = AX.defaultRetryPolicy { timeout = Just 500, shouldRetryWithStatusCode = \_ -> true }
+  let retryPolicy = AX.defaultRetryPolicy { timeout = Just (Milliseconds 500.0), shouldRetryWithStatusCode = \_ -> true }
 
   A.log "GET /does-not-exist: should be 404 Not found after retries"
   (attempt $ AX.retry retryPolicy AX.affjax $ AX.defaultRequest { url = doesNotExist }) >>= assertRight >>= \res -> do
@@ -86,7 +84,7 @@ main = void $ runAff (\e -> logShow e >>= \_ -> throwException e) (const $ log "
     assertEq notFound404 res.status
 
   A.log "GET /not-json: invalid JSON with Foreign response should throw an error"
-  assertLeft =<< attempt (AX.get doesNotExist :: AX.Affjax (MainEffects ()) Foreign)
+  void $ assertLeft =<< attempt (AX.get doesNotExist :: AX.Affjax (MainEffects ()) Foreign)
 
   A.log "GET /not-json: invalid JSON with String response should be ok"
   (attempt $ AX.get notJson) >>= assertRight >>= \res -> do

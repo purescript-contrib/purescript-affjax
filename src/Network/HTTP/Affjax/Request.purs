@@ -22,7 +22,7 @@ import Unsafe.Coerce as U
 
 -- | Type representing all content types that be sent via XHR (ArrayBufferView,
 -- | Blob, Document, String, FormData).
-foreign import data RequestContent :: *
+foreign import data RequestContent :: Type
 
 -- | A class for types that can be converted to values that can be sent with
 -- | XHR requests. An optional mime-type can be specified for a default
