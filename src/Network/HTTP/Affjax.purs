@@ -17,8 +17,8 @@ module Network.HTTP.Affjax
   , retry
   ) where
 
-import Data.Array as Arr
-import Data.HTTP.Method as Method
+import Prelude hiding (max)
+
 import Control.Monad.Aff (Aff, makeAff, makeAff', Canceler(..), attempt, delay, forkAff, cancel)
 import Control.Monad.Aff.AVar (AVAR, makeVar, takeVar, putVar)
 import Control.Monad.Eff (kind Effect, Eff)
@@ -26,27 +26,32 @@ import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Exception (Error, error)
 import Control.Monad.Eff.Ref (REF, newRef, readRef, writeRef)
 import Control.Monad.Except (runExcept, throwError)
-import DOM.XHR.Types (XMLHttpRequest)
+
 import Data.Argonaut.Parser (jsonParser)
+import Data.Array as Arr
 import Data.Either (Either(..), either)
 import Data.Foldable (any)
 import Data.Foreign (F, Foreign, ForeignError(JSONError), fail, readString, toForeign)
 import Data.Function (on)
 import Data.Function.Uncurried (Fn5, runFn5, Fn4, runFn4)
 import Data.HTTP.Method (Method(..), CustomMethod)
+import Data.HTTP.Method as Method
 import Data.Int (toNumber)
 import Data.Maybe (Maybe(..))
 import Data.MediaType (MediaType)
 import Data.Nullable (Nullable, toNullable)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
+
 import Math (max, pow)
+
+import DOM.XHR.Types (XMLHttpRequest)
+
 import Network.HTTP.Affjax.Request (class Requestable, RequestContent, toRequest)
 import Network.HTTP.Affjax.Response (class Respondable, ResponseContent, ResponseType(..), fromResponse, responseType, responseTypeToString)
 import Network.HTTP.RequestHeader (RequestHeader(..), requestHeaderName, requestHeaderValue)
 import Network.HTTP.ResponseHeader (ResponseHeader, responseHeader)
 import Network.HTTP.StatusCode (StatusCode(..))
-import Prelude hiding (max)
 
 -- | The effect type for AJAX requests made with Affjax.
 foreign import data AJAX :: Effect
