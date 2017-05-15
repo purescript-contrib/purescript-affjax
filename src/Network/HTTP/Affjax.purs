@@ -83,6 +83,7 @@ defaultRequest =
 -- | The type of records that will be received as an Affjax response.
 type AffjaxResponse a =
   { status :: StatusCode
+  , statusText :: String
   , headers :: Array ResponseHeader
   , response :: a
   }
