@@ -5,7 +5,6 @@ module Network.HTTP.Affjax
   , AffjaxResponse
   , URL
   , affjax
-  , affjax'
   , get
   , post, post_, post', post_'
   , put, put_, put', put_'
@@ -19,13 +18,14 @@ module Network.HTTP.Affjax
 
 import Prelude hiding (max)
 
-import Control.Monad.Aff (Aff, makeAff, makeAff', Canceler(..), attempt, delay, forkAff, cancel)
-import Control.Monad.Aff.AVar (AVAR, makeVar, takeVar, putVar)
-import Control.Monad.Eff (kind Effect, Eff)
+import Control.Monad.Aff (Aff, try, delay)
+import Control.Monad.Aff.Compat as AC
+import Control.Monad.Eff (kind Effect)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Exception (Error, error)
 import Control.Monad.Eff.Ref (REF, newRef, readRef, writeRef)
 import Control.Monad.Except (runExcept, throwError)
+import Control.Parallel (parOneOf)
 
 import Data.Argonaut.Parser (jsonParser)
 import Data.Array as Arr
@@ -33,7 +33,7 @@ import Data.Either (Either(..), either)
 import Data.Foldable (any)
 import Data.Foreign (F, Foreign, ForeignError(JSONError), fail, readString, toForeign)
 import Data.Function (on)
-import Data.Function.Uncurried (Fn5, runFn5, Fn4, runFn4)
+import Data.Function.Uncurried (Fn2, runFn2)
 import Data.HTTP.Method (Method(..), CustomMethod)
 import Data.HTTP.Method as Method
 import Data.Int (toNumber)
@@ -44,8 +44,6 @@ import Data.Time.Duration (Milliseconds(..))
 import Data.Tuple (Tuple(..), fst, snd)
 
 import Math (max, pow)
-
-import DOM.XHR.Types (XMLHttpRequest)
 
 import Network.HTTP.Affjax.Request (class Requestable, RequestContent, toRequest)
 import Network.HTTP.Affjax.Response (class Respondable, ResponseContent, ResponseType(..), fromResponse, responseType, responseTypeToString)
@@ -89,10 +87,6 @@ type AffjaxResponse a =
 
 -- | Type alias for URL strings to aid readability of types.
 type URL = String
-
--- | Makes an `Affjax` request.
-affjax :: forall e a b. Requestable a => Respondable b => AffjaxRequest a -> Affjax e b
-affjax = makeAff' <<< affjax'
 
 -- | Makes a `GET` request to the specified URL.
 get :: forall e a. Respondable a => URL -> Affjax e a
@@ -186,8 +180,8 @@ retry
   :: forall e a b
    . Requestable a
   => RetryPolicy
-  -> (AffjaxRequest a -> Affjax (avar :: AVAR, ref :: REF | e) b)
-  -> (AffjaxRequest a -> Affjax (avar :: AVAR, ref :: REF | e) b)
+  -> (AffjaxRequest a -> Affjax (ref :: REF | e) b)
+  -> (AffjaxRequest a -> Affjax (ref :: REF | e) b)
 retry policy run req = do
   -- failureRef is either an exception or a failed request
   failureRef <- liftEff $ newRef Nothing
@@ -195,14 +189,7 @@ retry policy run req = do
   case policy.timeout of
     Nothing -> loop 1
     Just timeout -> do
-      respVar <- makeVar
-      loopHandle <- forkAff $ loop 1 >>= putVar respVar <<< Just
-      timeoutHandle <-
-        forkAff $ do
-          delay timeout
-          putVar respVar Nothing
-          loopHandle `cancel` error "Cancel"
-      result <- takeVar respVar
+      result <- parOneOf [ Just <$> loop 1, Nothing <$ delay timeout ]
       case result of
         Nothing -> do
           failure <- liftEff $ readRef failureRef
@@ -225,7 +212,7 @@ retry policy run req = do
             Right resp
 
     go failureRef n = do
-      result <- retryState <$> attempt (run req)
+      result <- retryState <$> try (run req)
       case result of
         Left err -> do
           liftEff $ writeRef failureRef $ Just err
@@ -233,17 +220,18 @@ retry policy run req = do
           go failureRef (n + 1)
         Right resp -> pure resp
 
--- | Run a request directly without using `Aff`.
-affjax'
+-- | Makes an `Affjax` request.
+affjax
   :: forall e a b
    . Requestable a
   => Respondable b
   => AffjaxRequest a
-  -> (Error -> Eff (ajax :: AJAX | e) Unit)
-  -> (AffjaxResponse b -> Eff (ajax :: AJAX | e) Unit)
-  -> Eff (ajax :: AJAX | e) (Canceler (ajax :: AJAX | e))
-affjax' req eb cb =
-  runFn5 _ajax responseHeader req' cancelAjax eb cb'
+  -> Affjax e b
+affjax req = do
+  res <- AC.fromEffFnAff $ runFn2 _ajax responseHeader req'
+  case res { response = _  } <$> runExcept (fromResponse' res.response) of
+    Left err -> throwError $ error (show err)
+    Right res' -> pure res'
   where
 
   req' :: AjaxRequest
@@ -277,11 +265,6 @@ affjax' req eb cb =
     Just h | not $ any (on eq requestHeaderName h) hs -> hs `Arr.snoc` h
     _ -> hs
 
-  cb' :: AffjaxResponse ResponseContent -> Eff (ajax :: AJAX | e) Unit
-  cb' res = case res { response = _  } <$> runExcept (fromResponse' res.response) of
-    Left err -> eb $ error (show err)
-    Right res' -> cb res'
-
   parseJSON :: String -> F Foreign
   parseJSON = either (fail <<< JSONError) (pure <<< toForeign) <<< jsonParser
 
@@ -301,20 +284,4 @@ type AjaxRequest =
   , withCredentials :: Boolean
   }
 
-foreign import _ajax
-  :: forall e. Fn5 (String -> String -> ResponseHeader)
-               AjaxRequest
-               (XMLHttpRequest -> Canceler (ajax :: AJAX | e))
-               (Error -> Eff (ajax :: AJAX | e) Unit)
-               (AffjaxResponse Foreign -> Eff (ajax :: AJAX | e) Unit)
-               (Eff (ajax :: AJAX | e) (Canceler (ajax :: AJAX | e)))
-
-cancelAjax :: forall e. XMLHttpRequest -> Canceler (ajax :: AJAX | e)
-cancelAjax xhr = Canceler \err -> makeAff (\eb cb -> runFn4 _cancelAjax xhr err eb cb)
-
-foreign import _cancelAjax
-  :: forall e. Fn4 XMLHttpRequest
-                   Error
-                   (Error -> Eff (ajax :: AJAX | e) Unit)
-                   (Boolean -> Eff (ajax :: AJAX | e) Unit)
-                   (Eff (ajax :: AJAX | e) Unit)
+foreign import _ajax :: forall e. Fn2 (String -> String -> ResponseHeader) AjaxRequest (AC.EffFnAff (ajax :: AJAX | e) (AffjaxResponse Foreign))

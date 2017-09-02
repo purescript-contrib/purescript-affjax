@@ -3,14 +3,15 @@ module Test.Main where
 import Prelude
 import Control.Monad.Aff.Console as A
 import Network.HTTP.Affjax as AX
-import Control.Monad.Aff (Aff, cancel, forkAff, attempt, runAff, makeAff)
+import Control.Monad.Aff (Aff, forkAff, attempt, runAff, killFiber)
 import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (CONSOLE, log, logShow)
 import Control.Monad.Eff.Exception (EXCEPTION, error, throwException)
 import Control.Monad.Eff.Ref (REF)
-import Data.Either (Either(..))
+import Control.Monad.Error.Class (throwError)
+import Data.Either (Either(..), either)
 import Data.Foreign (Foreign, unsafeFromForeign)
 import Data.Maybe (Maybe(..))
 import Data.Time.Duration (Milliseconds(..))
@@ -24,7 +25,7 @@ logAny' = liftEff <<< logAny
 type Assert e a = Aff (exception :: EXCEPTION, console :: CONSOLE, ajax :: AX.AJAX | e) a
 
 assertFail :: forall e a. String -> Assert e a
-assertFail msg = makeAff \errback _ -> errback (error msg)
+assertFail = throwError <<< error
 
 assertMsg :: forall e. String -> Boolean -> Assert e Unit
 assertMsg _ true = pure unit
@@ -57,7 +58,7 @@ type MainEffects e =
   )
 
 main :: Eff (MainEffects (ajax :: AX.AJAX)) Unit
-main = void $ runAff (\e -> logShow e >>= \_ -> throwException e) (const $ log "affjax: All good!") $ do
+main = void $ runAff (either (\e -> logShow e *> throwException e) (const $ log "affjax: All good!")) do
   let ok200 = StatusCode 200
   let notFound404 = StatusCode 404
 
@@ -112,6 +113,5 @@ main = void $ runAff (\e -> logShow e >>= \_ -> throwException e) (const $ log "
     -- assertEq (Just "test=test") (lookupHeader "Set-Cookie" res.headers)
 
   A.log "Testing cancellation"
-  canceler <- forkAff (AX.post_ mirror "do it now")
-  canceled <- canceler `cancel` error "Pull the cord!"
-  assertMsg "Should have been canceled" canceled
+  forkAff (AX.post_ mirror "do it now") >>= killFiber (error "Pull the cord!")
+  assertMsg "Should have been canceled" true
