@@ -2,7 +2,7 @@
   "private": true,
   "scripts": {
     "clean": "rimraf output && rimraf .pulp-cache",
-    "build": "eslint src && pulp build --censor-lib --strict",
+    "build": "eslint src && pulp build -- --censor-lib --strict",
     "test": "eslint src && pulp test"
   },
   "devDependencies": {
