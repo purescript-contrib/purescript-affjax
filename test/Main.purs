@@ -93,13 +93,13 @@ main = void $ runAff (either (\e -> logShow e *> throwException e) (const $ log 
     assertEq ok200 res.status
 
   A.log "POST /mirror: should use the POST method"
-  (attempt $ AX.post mirror "test") >>= assertRight >>= \res -> do
+  (attempt $ AX.post mirror (AX.StringRequest "test")) >>= assertRight >>= \res -> do
     assertEq ok200 res.status
     assertEq "POST" (_.method $ unsafeFromForeign res.response)
 
   A.log "PUT with a request body"
   let content = "the quick brown fox jumps over the lazy dog"
-  (attempt $ AX.put mirror content) >>= assertRight >>= \res -> do
+  (attempt $ AX.put mirror (AX.StringRequest content)) >>= assertRight >>= \res -> do
     typeIs (res :: AX.AffjaxResponse Foreign)
     assertEq ok200 res.status
     let mirroredReq = unsafeFromForeign res.response
@@ -113,5 +113,5 @@ main = void $ runAff (either (\e -> logShow e *> throwException e) (const $ log 
     -- assertEq (Just "test=test") (lookupHeader "Set-Cookie" res.headers)
 
   A.log "Testing cancellation"
-  forkAff (AX.post_ mirror "do it now") >>= killFiber (error "Pull the cord!")
+  forkAff (AX.post_ mirror (AX.StringRequest "do it now")) >>= killFiber (error "Pull the cord!")
   assertMsg "Should have been canceled" true
