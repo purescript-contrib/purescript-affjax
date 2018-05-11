@@ -5,20 +5,18 @@ module Network.HTTP.Affjax.Request
 
 import Prelude
 
-import Data.Argonaut.Core (Json())
+import Data.Argonaut.Core (Json, stringify)
 import Data.ArrayBuffer.Types as A
-import Data.FormURLEncoded (FormURLEncoded())
+import Data.FormURLEncoded (FormURLEncoded)
 import Data.FormURLEncoded as URLEncoded
 import Data.Maybe (Maybe(..))
-import Data.MediaType (MediaType())
+import Data.MediaType (MediaType)
 import Data.MediaType.Common (applicationJSON, applicationFormURLEncoded)
 import Data.Tuple (Tuple(..))
-
-import DOM.File.Types (Blob())
-import DOM.Node.Types (Document())
-import DOM.XHR.Types (FormData())
-
 import Unsafe.Coerce as U
+import Web.DOM.Document (Document)
+import Web.File.Blob (Blob)
+import Web.XHR.FormData (FormData)
 
 -- | Type representing all content types that be sent via XHR (ArrayBufferView,
 -- | Blob, Document, String, FormData).
@@ -73,7 +71,7 @@ instance requestableString :: Requestable String where
   toRequest = defaultToRequest
 
 instance requestableJson :: Requestable Json where
-  toRequest json = Tuple (Just applicationJSON) (U.unsafeCoerce (show json))
+  toRequest json = Tuple (Just applicationJSON) (U.unsafeCoerce (stringify json))
 
 instance requestableFormData :: Requestable FormData where
   toRequest = defaultToRequest

@@ -8,14 +8,14 @@ import Prelude
 
 import Data.Argonaut.Core (Json)
 import Data.ArrayBuffer.Types as A
-import Data.Foreign (Foreign, F, readString, unsafeReadTagged)
+import Foreign (Foreign, F, readString, unsafeReadTagged)
 import Data.Maybe (Maybe(..))
 import Data.MediaType (MediaType)
 import Data.MediaType.Common (applicationJSON)
 import Data.Tuple (Tuple(..))
 
-import DOM.File.Types (Blob)
-import DOM.Node.Types (Document)
+import Web.File.Blob (Blob)
+import Web.DOM.Document (Document)
 
 import Unsafe.Coerce (unsafeCoerce)
 
