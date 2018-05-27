@@ -1,86 +1,47 @@
-module Network.HTTP.Affjax.Request
-  ( RequestContent()
-  , class Requestable, toRequest
-  ) where
+module Network.HTTP.Affjax.Request where
 
-import Prelude
-
-import Data.Argonaut.Core (Json())
+import Data.Argonaut.Core (Json)
 import Data.ArrayBuffer.Types as A
-import Data.FormURLEncoded (FormURLEncoded())
-import Data.FormURLEncoded as URLEncoded
+import Data.FormURLEncoded (FormURLEncoded)
 import Data.Maybe (Maybe(..))
-import Data.MediaType (MediaType())
+import Data.MediaType (MediaType)
 import Data.MediaType.Common (applicationJSON, applicationFormURLEncoded)
-import Data.Tuple (Tuple(..))
+import Web.DOM.Document (Document)
+import Web.File.Blob (Blob)
+import Web.XHR.FormData (FormData)
 
-import DOM.File.Types (Blob())
-import DOM.Node.Types (Document())
-import DOM.XHR.Types (FormData())
+data Request
+  = ArrayView (forall r. (forall a. A.ArrayView a -> r) -> r)
+  | Blob Blob
+  | Document Document
+  | String String
+  | FormData FormData
+  | FormURLEncoded FormURLEncoded
+  | Json Json
 
-import Unsafe.Coerce as U
+arrayView :: forall a. A.ArrayView a -> Request
+arrayView av = ArrayView \f -> f av
 
--- | Type representing all content types that be sent via XHR (ArrayBufferView,
--- | Blob, Document, String, FormData).
-foreign import data RequestContent :: Type
+blob :: Blob -> Request
+blob = Blob
 
--- | A class for types that can be converted to values that can be sent with
--- | XHR requests. An optional mime-type can be specified for a default
--- | `Content-Type` header.
-class Requestable a where
-  toRequest :: a -> Tuple (Maybe MediaType) RequestContent
+document :: Document -> Request
+document = Document
 
-defaultToRequest :: forall a. a -> Tuple (Maybe MediaType) RequestContent
-defaultToRequest = Tuple Nothing <<< U.unsafeCoerce
+string :: String -> Request
+string = String
 
-instance requestableRequestContent :: Requestable RequestContent where
-  toRequest = defaultToRequest
+formData :: FormData -> Request
+formData = FormData
 
-instance requestableInt8Array :: Requestable (A.ArrayView A.Int8) where
-  toRequest = defaultToRequest
+formURLEncoded :: FormURLEncoded -> Request
+formURLEncoded = FormURLEncoded
 
-instance requestableInt16Array :: Requestable (A.ArrayView A.Int16) where
-  toRequest = defaultToRequest
+json :: Json -> Request
+json = Json
 
-instance requestableInt32Array :: Requestable (A.ArrayView A.Int32) where
-  toRequest = defaultToRequest
-
-instance requestableUint8Array :: Requestable (A.ArrayView A.Uint8) where
-  toRequest = defaultToRequest
-
-instance requestableUint16Array :: Requestable (A.ArrayView A.Uint16) where
-  toRequest = defaultToRequest
-
-instance requestableUint32Array :: Requestable (A.ArrayView A.Uint32) where
-  toRequest = defaultToRequest
-
-instance requestableUint8ClampedArray :: Requestable (A.ArrayView A.Uint8Clamped) where
-  toRequest = defaultToRequest
-
-instance requestableFloat32Array :: Requestable (A.ArrayView A.Float32) where
-  toRequest = defaultToRequest
-
-instance requestableFloat64Array :: Requestable (A.ArrayView A.Float64) where
-  toRequest = defaultToRequest
-
-instance requestableBlob :: Requestable Blob where
-  toRequest = defaultToRequest
-
-instance requestableDocument :: Requestable Document where
-  toRequest = defaultToRequest
-
-instance requestableString :: Requestable String where
-  toRequest = defaultToRequest
-
-instance requestableJson :: Requestable Json where
-  toRequest json = Tuple (Just applicationJSON) (U.unsafeCoerce (show json))
-
-instance requestableFormData :: Requestable FormData where
-  toRequest = defaultToRequest
-
-instance requestableFormURLEncoded :: Requestable FormURLEncoded where
-  toRequest form = Tuple (Just applicationFormURLEncoded)
-                         (U.unsafeCoerce (URLEncoded.encode form))
-
-instance requestableUnit :: Requestable Unit where
-  toRequest = defaultToRequest
+toMediaType :: Request -> Maybe MediaType
+toMediaType = case _ of
+  FormURLEncoded _ -> Just applicationFormURLEncoded
+  Json _ -> Just applicationJSON
+  _ -> Nothing
