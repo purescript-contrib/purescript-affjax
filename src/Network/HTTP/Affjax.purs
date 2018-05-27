@@ -22,6 +22,7 @@ import Control.Parallel (parOneOf)
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Core as J
 import Data.Argonaut.Parser (jsonParser)
+import Data.Array (intercalate)
 import Data.Array as Arr
 import Data.Either (Either(..), either)
 import Data.Foldable (any)
@@ -39,7 +40,7 @@ import Effect.Aff.Compat as AC
 import Effect.Class (liftEffect)
 import Effect.Exception (Error, error)
 import Effect.Ref as Ref
-import Foreign (F, Foreign, ForeignError(..), fail, unsafeReadTagged, unsafeToForeign)
+import Foreign (F, Foreign, ForeignError(..), fail, renderForeignError, unsafeReadTagged, unsafeToForeign)
 import Math as Math
 import Network.HTTP.Affjax.Request as Request
 import Network.HTTP.Affjax.Response as Response
@@ -213,8 +214,8 @@ affjax :: forall a. Response.Response a -> AffjaxRequest -> Affjax a
 affjax rt req = do
   res <- AC.fromEffectFnAff $ runFn2 _ajax responseHeader req'
   case runExcept (fromResponse' res.response) of
-    Left err -> throwError $ error (show err)
-    Right res' -> pure (res { response = res'  })
+    Left err -> throwError $ error $ intercalate "\n" (map renderForeignError err)
+    Right res' -> pure (res { response = res' })
   where
 
   req' :: AjaxRequest a
@@ -251,7 +252,9 @@ affjax rt req = do
     _ -> hs
 
   parseJSON :: String -> F Json
-  parseJSON = either (fail <<< ForeignError) pure <<< jsonParser
+  parseJSON = case _ of
+    "" -> pure J.jsonEmptyObject
+    str -> either (fail <<< ForeignError) pure (jsonParser str)
 
   fromResponse' :: Foreign -> F a
   fromResponse' = case rt of
