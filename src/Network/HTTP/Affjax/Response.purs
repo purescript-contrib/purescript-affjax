@@ -1,90 +1,53 @@
-module Network.HTTP.Affjax.Response
-  ( ResponseType(..), responseTypeToString
-  , ResponseContent
-  , class Respondable, responseType, fromResponse
-  ) where
+module Network.HTTP.Affjax.Response where
 
 import Prelude
 
 import Data.Argonaut.Core (Json)
-import Data.ArrayBuffer.Types as A
-import Data.Foreign (Foreign, F, readString, unsafeReadTagged)
+import Data.ArrayBuffer.Types (ArrayBuffer)
 import Data.Maybe (Maybe(..))
 import Data.MediaType (MediaType)
 import Data.MediaType.Common (applicationJSON)
-import Data.Tuple (Tuple(..))
+import Web.DOM.Document (Document)
+import Web.File.Blob (Blob)
 
-import DOM.File.Types (Blob)
-import DOM.Node.Types (Document)
+data AffjaxResponse a
+  = ArrayBufferResponse (forall f. f ArrayBuffer -> f a)
+  | BlobResponse (forall f. f Blob -> f a)
+  | DocumentResponse (forall f. f Document -> f a)
+  | JSONResponse (forall f. f Json -> f a)
+  | StringResponse (forall f. f String -> f a)
+  | IgnoredResponse (forall f. f Unit -> f a)
 
-import Unsafe.Coerce (unsafeCoerce)
+arrayBuffer :: AffjaxResponse ArrayBuffer
+arrayBuffer = ArrayBufferResponse identity
 
--- | Valid response types for an AJAX request. This is used to determine the
--- | `ResponseContent` type for a request. The `a` type variable is a phantom
--- | type used to associate the `ResponseType` with a particular instance of
--- | `Respondable`.
-data ResponseType a
-  = ArrayBufferResponse
-  | BlobResponse
-  | DocumentResponse
-  | JSONResponse
-  | StringResponse
+blob :: AffjaxResponse Blob
+blob = BlobResponse identity
 
-instance eqResponseType :: Eq (ResponseType a) where
-  eq ArrayBufferResponse ArrayBufferResponse = true
-  eq BlobResponse        BlobResponse        = true
-  eq DocumentResponse    DocumentResponse    = true
-  eq JSONResponse        JSONResponse        = true
-  eq StringResponse      StringResponse      = true
-  eq _ _ = false
+document :: AffjaxResponse Document
+document = DocumentResponse identity
 
-instance showResponseType :: Show (ResponseType a) where
-  show ArrayBufferResponse = "ArrayBufferResponse"
-  show BlobResponse = "BlobResponse"
-  show DocumentResponse = "DocumentResponse"
-  show JSONResponse = "JSONResponse"
-  show StringResponse = "StringResponse"
+json :: AffjaxResponse Json
+json = JSONResponse identity
 
-responseTypeToString :: forall a. (ResponseType a) -> String
-responseTypeToString ArrayBufferResponse = "arraybuffer"
-responseTypeToString BlobResponse = "blob"
-responseTypeToString DocumentResponse = "document"
-responseTypeToString JSONResponse = "text" -- IE doesn't support "json" responseType
-responseTypeToString StringResponse = "text"
+string :: AffjaxResponse String
+string = StringResponse identity
 
--- | Type representing content types that be received from an XHR request
--- | (Blob, Document, JSON, String). An optional mime-type can be specified for
--- | a default `Accept` header.
-type ResponseContent = Foreign
+ignored :: AffjaxResponse Unit
+ignored = IgnoredResponse identity
 
-class Respondable a where
-  responseType :: Tuple (Maybe MediaType) (ResponseType a)
-  fromResponse :: ResponseContent -> F a
+responseTypeToString :: forall a. AffjaxResponse a -> String
+responseTypeToString =
+  case _ of
+    ArrayBufferResponse _ -> "arraybuffer"
+    BlobResponse _ -> "blob"
+    DocumentResponse _ -> "document"
+    JSONResponse _ -> "text" -- IE doesn't support "json" responseType
+    StringResponse _ -> "text"
+    IgnoredResponse _ -> "text"
 
-instance responsableBlob :: Respondable Blob where
-  responseType = Tuple Nothing BlobResponse
-  fromResponse = unsafeReadTagged "Blob"
-
-instance responsableDocument :: Respondable Document where
-  responseType = Tuple Nothing DocumentResponse
-  fromResponse = unsafeReadTagged "Document"
-
-instance responsableForeign :: Respondable Foreign where
-  responseType = Tuple Nothing JSONResponse
-  fromResponse = pure <<< unsafeCoerce
-
-instance responsableString :: Respondable String where
-  responseType = Tuple Nothing StringResponse
-  fromResponse = readString
-
-instance responsableUnit :: Respondable Unit where
-  responseType = Tuple Nothing StringResponse
-  fromResponse = const (pure unit)
-
-instance responsableArrayBuffer :: Respondable A.ArrayBuffer where
-  responseType = Tuple Nothing ArrayBufferResponse
-  fromResponse = unsafeReadTagged "ArrayBuffer"
-
-instance responsableJson :: Respondable Json where
-  responseType = Tuple (Just applicationJSON) JSONResponse
-  fromResponse = pure <<< unsafeCoerce
+responseTypeToMediaType :: forall a. AffjaxResponse a -> Maybe MediaType
+responseTypeToMediaType =
+  case _ of
+    JSONResponse _ -> Just applicationJSON
+    _ -> Nothing

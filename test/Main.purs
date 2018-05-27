@@ -1,114 +1,94 @@
 module Test.Main where
 
 import Prelude
-import Control.Monad.Aff.Console as A
-import Network.HTTP.Affjax as AX
-import Control.Monad.Aff (Aff, forkAff, attempt, runAff, killFiber)
-import Control.Monad.Aff.AVar (AVAR)
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Console (CONSOLE, log, logShow)
-import Control.Monad.Eff.Exception (EXCEPTION, error, throwException)
-import Control.Monad.Eff.Ref (REF)
+
 import Control.Monad.Error.Class (throwError)
+import Data.Argonaut.Core as J
 import Data.Either (Either(..), either)
-import Data.Foreign (Foreign, unsafeFromForeign)
 import Data.Maybe (Maybe(..))
 import Data.Time.Duration (Milliseconds(..))
+import Effect (Effect)
+import Effect.Aff (Aff, forkAff, attempt, runAff, killFiber)
+import Effect.Class (liftEffect)
+import Effect.Class.Console as A
+import Effect.Console (log, logShow)
+import Effect.Exception (error, throwException)
+import Foreign.Object as FO
+import Network.HTTP.Affjax as AX
+import Network.HTTP.Affjax.Response as AXR
 import Network.HTTP.StatusCode (StatusCode(..))
 
-foreign import logAny :: forall e a. a -> Eff (console :: CONSOLE | e) Unit
+foreign import logAny :: forall a. a -> Effect Unit
 
-logAny' :: forall e a. a -> Assert e Unit
-logAny' = liftEff <<< logAny
+logAny' :: forall a. a -> Aff Unit
+logAny' = liftEffect <<< logAny
 
-type Assert e a = Aff (exception :: EXCEPTION, console :: CONSOLE, ajax :: AX.AJAX | e) a
-
-assertFail :: forall e a. String -> Assert e a
+assertFail :: forall a. String -> Aff a
 assertFail = throwError <<< error
 
-assertMsg :: forall e. String -> Boolean -> Assert e Unit
+assertMsg :: String -> Boolean -> Aff Unit
 assertMsg _ true = pure unit
 assertMsg msg false = assertFail msg
 
-assertRight :: forall e a b. Either a b -> Assert e b
+assertRight :: forall a b. Either a b -> Aff b
 assertRight x = case x of
   Left y -> logAny' y >>= \_ -> assertFail "Expected a Right value"
   Right y -> pure y
 
-assertLeft :: forall e a b. Either a b -> Assert e a
+assertLeft :: forall a b. Either a b -> Aff a
 assertLeft x = case x of
   Right y -> logAny' y >>= \_ -> assertFail "Expected a Left value"
   Left y -> pure y
 
-assertEq :: forall e a. Eq a => Show a => a -> a -> Assert e Unit
+assertEq :: forall a. Eq a => Show a => a -> a -> Aff Unit
 assertEq x y =
   when (x /= y) $ assertFail $ "Expected " <> show x <> ", got " <> show y
 
--- | For helping type inference
-typeIs :: forall e a. a -> Assert e Unit
-typeIs = const (pure unit)
-
-type MainEffects e =
-  ( ref :: REF
-  , avar :: AVAR
-  , exception :: EXCEPTION
-  , console :: CONSOLE
-  | e
-  )
-
-main :: Eff (MainEffects (ajax :: AX.AJAX)) Unit
+main :: Effect Unit
 main = void $ runAff (either (\e -> logShow e *> throwException e) (const $ log "affjax: All good!")) do
   let ok200 = StatusCode 200
   let notFound404 = StatusCode 404
 
   -- A complete URL is necessary for tests to work on Node.js
   let prefix = append "http://localhost:3838"
-  let mirror       = prefix "/mirror"
+  let mirror = prefix "/mirror"
   let doesNotExist = prefix "/does-not-exist"
-  let notJson      = prefix "/not-json"
+  let notJson = prefix "/not-json"
   let retryPolicy = AX.defaultRetryPolicy { timeout = Just (Milliseconds 500.0), shouldRetryWithStatusCode = \_ -> true }
 
   A.log "GET /does-not-exist: should be 404 Not found after retries"
-  (attempt $ AX.retry retryPolicy AX.affjax $ AX.defaultRequest { url = doesNotExist }) >>= assertRight >>= \res -> do
-    typeIs (res :: AX.AffjaxResponse String)
+  (attempt $ AX.retry retryPolicy (AX.affjax AXR.ignored) $ AX.defaultRequest { url = doesNotExist }) >>= assertRight >>= \res -> do
     assertEq notFound404 res.status
 
   A.log "GET /mirror: should be 200 OK"
-  (attempt $ AX.affjax $ AX.defaultRequest { url = mirror }) >>= assertRight >>= \res -> do
-    typeIs (res :: AX.AffjaxResponse Foreign)
+  (attempt $ AX.affjax AXR.ignored $ AX.defaultRequest { url = mirror }) >>= assertRight >>= \res -> do
     assertEq ok200 res.status
 
   A.log "GET /does-not-exist: should be 404 Not found"
-  (attempt $ AX.affjax $ AX.defaultRequest { url = doesNotExist }) >>= assertRight >>= \res -> do
-    typeIs (res :: AX.AffjaxResponse String)
+  (attempt $ AX.affjax AXR.ignored $ AX.defaultRequest { url = doesNotExist }) >>= assertRight >>= \res -> do
     assertEq notFound404 res.status
 
   A.log "GET /not-json: invalid JSON with Foreign response should throw an error"
-  void $ assertLeft =<< attempt (AX.get doesNotExist :: AX.Affjax (MainEffects ()) Foreign)
+  void $ assertLeft =<< attempt (AX.get AXR.json doesNotExist)
 
   A.log "GET /not-json: invalid JSON with String response should be ok"
-  (attempt $ AX.get notJson) >>= assertRight >>= \res -> do
-    typeIs (res :: AX.AffjaxResponse String)
+  (attempt $ AX.get AXR.string notJson) >>= assertRight >>= \res -> do
     assertEq ok200 res.status
 
   A.log "POST /mirror: should use the POST method"
-  (attempt $ AX.post mirror (AX.StringRequest "test")) >>= assertRight >>= \res -> do
+  (attempt $ AX.post AXR.json mirror (AX.StringRequest "test")) >>= assertRight >>= \res -> do
     assertEq ok200 res.status
-    assertEq "POST" (_.method $ unsafeFromForeign res.response)
+    assertEq (Just "POST") (J.toString =<< FO.lookup "method" =<< J.toObject res.response)
 
   A.log "PUT with a request body"
   let content = "the quick brown fox jumps over the lazy dog"
-  (attempt $ AX.put mirror (AX.StringRequest content)) >>= assertRight >>= \res -> do
-    typeIs (res :: AX.AffjaxResponse Foreign)
+  (attempt $ AX.put AXR.json mirror (AX.StringRequest content)) >>= assertRight >>= \res -> do
     assertEq ok200 res.status
-    let mirroredReq = unsafeFromForeign res.response
-    assertEq "PUT"   mirroredReq.method
-    assertEq content mirroredReq.body
+    assertEq (Just "PUT") (J.toString =<< FO.lookup "method" =<< J.toObject res.response)
+    assertEq (Just content) (J.toString =<< FO.lookup "body" =<< J.toObject res.response)
 
   A.log "Testing CORS, HTTPS"
-  (attempt $ AX.get "https://cors-test.appspot.com/test") >>= assertRight >>= \res -> do
-    typeIs (res :: AX.AffjaxResponse Foreign)
+  (attempt $ AX.get AXR.json "https://cors-test.appspot.com/test") >>= assertRight >>= \res -> do
     assertEq ok200 res.status
     -- assertEq (Just "test=test") (lookupHeader "Set-Cookie" res.headers)
 

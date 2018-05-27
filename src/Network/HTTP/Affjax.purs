@@ -1,8 +1,7 @@
 module Network.HTTP.Affjax
-  ( AJAX
-  , Affjax
+  ( Affjax
   , AffjaxRequest, defaultRequest
-  , AffjaxResponse
+  , AffjaxResponseT
   , URL
   , affjax
   , get
@@ -19,20 +18,14 @@ module Network.HTTP.Affjax
 
 import Prelude
 
-import Control.Monad.Aff (Aff, try, delay)
-import Control.Monad.Aff.Compat as AC
-import Control.Monad.Eff (kind Effect)
-import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Exception (Error, error)
-import Control.Monad.Eff.Ref (REF, newRef, readRef, writeRef)
 import Control.Monad.Except (runExcept, throwError)
 import Control.Parallel (parOneOf)
+import Data.Argonaut.Core (Json)
 import Data.Argonaut.Core as J
 import Data.Argonaut.Parser (jsonParser)
 import Data.Array as Arr
 import Data.Either (Either(..), either)
 import Data.Foldable (any)
-import Data.Foreign (F, Foreign, ForeignError(JSONError), fail, readString, toForeign)
 import Data.FormURLEncoded as FormURLEncoded
 import Data.Function (on)
 import Data.Function.Uncurried (Fn2, runFn2)
@@ -40,23 +33,24 @@ import Data.HTTP.Method (Method(..), CustomMethod)
 import Data.HTTP.Method as Method
 import Data.Int (toNumber)
 import Data.Maybe (Maybe(..))
-import Data.MediaType (MediaType)
 import Data.Nullable (Nullable, toNullable)
 import Data.Time.Duration (Milliseconds(..))
-import Data.Tuple (Tuple, fst, snd)
+import Effect.Aff (Aff, try, delay)
+import Effect.Aff.Compat as AC
+import Effect.Class (liftEffect)
+import Effect.Exception (Error, error)
+import Effect.Ref as Ref
+import Foreign (F, Foreign, ForeignError(..), fail, unsafeReadTagged, unsafeToForeign)
 import Math as Math
-import Network.HTTP.Affjax.Request (RequestContent(..)) as Exports
 import Network.HTTP.Affjax.Request (RequestContent(..), defaultMediaType)
-import Network.HTTP.Affjax.Response (class Respondable, ResponseContent, ResponseType(..), fromResponse, responseType, responseTypeToString)
+import Network.HTTP.Affjax.Request (RequestContent(..)) as Exports
+import Network.HTTP.Affjax.Response (AffjaxResponse(..), responseTypeToMediaType, responseTypeToString)
 import Network.HTTP.RequestHeader (RequestHeader(..), requestHeaderName, requestHeaderValue)
 import Network.HTTP.ResponseHeader (ResponseHeader, responseHeader)
 import Network.HTTP.StatusCode (StatusCode(..))
 
--- | The effect type for AJAX requests made with Affjax.
-foreign import data AJAX :: Effect
-
 -- | The result type for Affjax requests.
-type Affjax eff a = Aff (ajax :: AJAX | eff) (AffjaxResponse a)
+type Affjax a = Aff (AffjaxResponseT a)
 
 type AffjaxRequest =
   { method :: Either Method CustomMethod
@@ -80,7 +74,7 @@ defaultRequest =
   }
 
 -- | The type of records that will be received as an Affjax response.
-type AffjaxResponse a =
+type AffjaxResponseT a =
   { status :: StatusCode
   , headers :: Array ResponseHeader
   , response :: a
@@ -90,70 +84,70 @@ type AffjaxResponse a =
 type URL = String
 
 -- | Makes a `GET` request to the specified URL.
-get :: forall e a. Respondable a => URL -> Affjax e a
-get u = affjax $ defaultRequest { url = u }
+get :: forall a. AffjaxResponse a -> URL -> Affjax a
+get rt u = affjax rt $ defaultRequest { url = u }
 
 -- | Makes a `POST` request to the specified URL, sending data.
-post :: forall e a b. Respondable b => URL -> RequestContent -> Affjax e b
-post u c = affjax $ defaultRequest { method = Left POST, url = u, content = Just c }
+post :: forall a. AffjaxResponse a -> URL -> RequestContent -> Affjax a
+post rt u c = affjax rt $ defaultRequest { method = Left POST, url = u, content = Just c }
 
 -- | Makes a `POST` request to the specified URL with the option to send data.
-post' :: forall e a b. Respondable b => URL -> Maybe RequestContent -> Affjax e b
-post' u c = affjax $ defaultRequest { method = Left POST, url = u, content = c }
+post' :: forall a. AffjaxResponse a -> URL -> Maybe RequestContent -> Affjax a
+post' rt u c = affjax rt $ defaultRequest { method = Left POST, url = u, content = c }
 
 -- | Makes a `POST` request to the specified URL, sending data and ignoring the
 -- | response.
-post_ :: forall e a. URL -> RequestContent -> Affjax e Unit
-post_ = post
+post_ :: URL -> RequestContent -> Affjax Unit
+post_ = post (IgnoredResponse identity)
 
 -- | Makes a `POST` request to the specified URL with the option to send data,
 -- | and ignores the response.
-post_' :: forall e a. URL -> Maybe RequestContent -> Affjax e Unit
-post_' = post'
+post_' :: URL -> Maybe RequestContent -> Affjax Unit
+post_' = post' (IgnoredResponse identity)
 
 -- | Makes a `PUT` request to the specified URL, sending data.
-put :: forall e a b. Respondable b => URL -> RequestContent -> Affjax e b
-put u c = affjax $ defaultRequest { method = Left PUT, url = u, content = Just c }
+put :: forall a. AffjaxResponse a -> URL -> RequestContent -> Affjax a
+put rt u c = affjax rt $ defaultRequest { method = Left PUT, url = u, content = Just c }
 
 -- | Makes a `PUT` request to the specified URL with the option to send data.
-put' :: forall e a b. Respondable b => URL -> Maybe RequestContent -> Affjax e b
-put' u c = affjax $ defaultRequest { method = Left PUT, url = u, content = c }
+put' :: forall a. AffjaxResponse a -> URL -> Maybe RequestContent -> Affjax a
+put' rt u c = affjax rt $ defaultRequest { method = Left PUT, url = u, content = c }
 
 -- | Makes a `PUT` request to the specified URL, sending data and ignoring the
 -- | response.
-put_ :: forall e a. URL -> RequestContent -> Affjax e Unit
-put_ = put
+put_ :: URL -> RequestContent -> Affjax Unit
+put_ = put  (IgnoredResponse identity)
 
 -- | Makes a `PUT` request to the specified URL with the option to send data,
 -- | and ignores the response.
-put_' :: forall e a. URL -> Maybe RequestContent -> Affjax e Unit
-put_' = put'
+put_' :: URL -> Maybe RequestContent -> Affjax Unit
+put_' = put'  (IgnoredResponse identity)
 
 -- | Makes a `DELETE` request to the specified URL.
-delete :: forall e a. Respondable a => URL -> Affjax e a
-delete u = affjax $ defaultRequest { method = Left DELETE, url = u }
+delete :: forall a. AffjaxResponse a -> URL -> Affjax a
+delete rt u = affjax rt $ defaultRequest { method = Left DELETE, url = u }
 
 -- | Makes a `DELETE` request to the specified URL and ignores the response.
-delete_ :: forall e. URL -> Affjax e Unit
-delete_ = delete
+delete_ :: URL -> Affjax Unit
+delete_ = delete (IgnoredResponse identity)
 
 -- | Makes a `PATCH` request to the specified URL, sending data.
-patch :: forall e a b. Respondable b => URL -> RequestContent -> Affjax e b
-patch u c = affjax $ defaultRequest { method = Left PATCH, url = u, content = Just c }
+patch :: forall a. AffjaxResponse a -> URL -> RequestContent -> Affjax a
+patch rt u c = affjax rt $ defaultRequest { method = Left PATCH, url = u, content = Just c }
 
 -- | Makes a `PATCH` request to the specified URL with the option to send data.
-patch' :: forall e a b. Respondable b => URL -> Maybe RequestContent -> Affjax e b
-patch' u c = affjax $ defaultRequest { method = Left PATCH, url = u, content = c }
+patch' :: forall a. AffjaxResponse a -> URL -> Maybe RequestContent -> Affjax a
+patch' rt u c = affjax rt $ defaultRequest { method = Left PATCH, url = u, content = c }
 
 -- | Makes a `PATCH` request to the specified URL, sending data and ignoring the
 -- | response.
-patch_ :: forall e a. URL -> RequestContent -> Affjax e Unit
-patch_ = patch
+patch_ :: URL -> RequestContent -> Affjax Unit
+patch_ = patch (IgnoredResponse identity)
 
 -- | Makes a `PATCH` request to the specified URL with the option to send data,
 -- | and ignores the response.
-patch_' :: forall e a. URL -> Maybe RequestContent -> Affjax e Unit
-patch_' = patch'
+patch_' :: URL -> Maybe RequestContent -> Affjax Unit
+patch_' = patch' (IgnoredResponse identity)
 
 -- | A sequence of retry delays, in milliseconds.
 type RetryDelayCurve = Int -> Milliseconds
@@ -177,15 +171,10 @@ defaultRetryPolicy =
 type RetryState e a = Either (Either e a) a
 
 -- | Retry a request using a `RetryPolicy`. After the timeout, the last received response is returned; if it was not possible to communicate with the server due to an error, then this is bubbled up.
-retry
-  :: forall e a b
-   . RetryPolicy
-  -> (AffjaxRequest -> Affjax (ref :: REF | e) b)
-  -> AffjaxRequest
-  -> Affjax (ref :: REF | e) b
+retry :: forall a. RetryPolicy -> (AffjaxRequest -> Affjax a) -> AffjaxRequest -> Affjax a
 retry policy run req = do
   -- failureRef is either an exception or a failed request
-  failureRef <- liftEff $ newRef Nothing
+  failureRef <- liftEffect $ Ref.new Nothing
   let loop = go failureRef
   case policy.timeout of
     Nothing -> loop 1
@@ -193,15 +182,15 @@ retry policy run req = do
       result <- parOneOf [ Just <$> loop 1, Nothing <$ delay timeout ]
       case result of
         Nothing -> do
-          failure <- liftEff $ readRef failureRef
+          failure <- liftEffect $ Ref.read failureRef
           case failure of
             Nothing -> throwError $ error "Timeout"
             Just failure' -> either throwError pure failure'
         Just resp -> pure resp
   where
     retryState
-      :: Either Error (AffjaxResponse b)
-      -> RetryState Error (AffjaxResponse b)
+      :: Either Error (AffjaxResponseT a)
+      -> RetryState Error (AffjaxResponseT a)
     retryState (Left exn) = Left $ Left exn
     retryState (Right resp) =
       case resp.status of
@@ -216,31 +205,27 @@ retry policy run req = do
       result <- retryState <$> try (run req)
       case result of
         Left err -> do
-          liftEff $ writeRef failureRef $ Just err
+          liftEffect $ Ref.write (Just err) failureRef
           delay (policy.delayCurve n)
           go failureRef (n + 1)
         Right resp -> pure resp
 
 -- | Makes an `Affjax` request.
-affjax
-  :: forall e a b
-   . Respondable b
-  => AffjaxRequest
-  -> Affjax e b
-affjax req = do
-  res <- AC.fromEffFnAff $ runFn2 _ajax responseHeader req'
-  case res { response = _  } <$> runExcept (fromResponse' res.response) of
+affjax :: forall a. AffjaxResponse a -> AffjaxRequest -> Affjax a
+affjax rt req = do
+  res <- AC.fromEffectFnAff $ runFn2 _ajax responseHeader req'
+  case runExcept (fromResponse' res.response) of
     Left err -> throwError $ error (show err)
-    Right res' -> pure res'
+    Right res' -> pure (res { response = res'  })
   where
 
-  req' :: AjaxRequest
+  req' :: AjaxRequest a
   req' =
     { method: Method.print req.method
     , url: req.url
     , headers: (\h -> { field: requestHeaderName h, value: requestHeaderValue h }) <$> headers req.content
     , content: toNullable (extractContent <$> req.content)
-    , responseType: responseTypeToString (snd responseSettings)
+    , responseType: responseTypeToString rt
     , username: toNullable req.username
     , password: toNullable req.password
     , withCredentials: req.withCredentials
@@ -248,29 +233,18 @@ affjax req = do
 
   extractContent :: RequestContent -> Foreign
   extractContent = case _ of
-    ArrayViewInt8Request x → toForeign x
-    ArrayViewInt16Request x → toForeign x
-    ArrayViewInt32Request x → toForeign x
-    ArrayViewUint8Request x → toForeign x
-    ArrayViewUint16Request x → toForeign x
-    ArrayViewUint32Request x → toForeign x
-    ArrayViewUint8ClampedRequest x → toForeign x
-    ArrayViewFloat32Request x → toForeign x
-    ArrayViewFloat64Request x → toForeign x
-    BlobRequest x → toForeign x
-    DocumentRequest x → toForeign x
-    StringRequest x → toForeign x
-    FormDataRequest x → toForeign x
-    FormURLEncodedRequest x → toForeign (FormURLEncoded.encode x)
-    JsonRequest x → toForeign (J.stringify x)
-
-  responseSettings :: Tuple (Maybe MediaType) (ResponseType b)
-  responseSettings = responseType
+    ArrayView f → f unsafeToForeign
+    BlobRequest x → unsafeToForeign x
+    DocumentRequest x → unsafeToForeign x
+    StringRequest x → unsafeToForeign x
+    FormDataRequest x → unsafeToForeign x
+    FormURLEncodedRequest x → unsafeToForeign (FormURLEncoded.encode x)
+    JsonRequest x → unsafeToForeign (J.stringify x)
 
   headers :: Maybe RequestContent -> Array RequestHeader
   headers reqContent =
     addHeader (ContentType <$> (defaultMediaType =<< reqContent)) $
-      addHeader (Accept <$> fst responseSettings)
+      addHeader (Accept <$> responseTypeToMediaType rt)
         req.headers
 
   addHeader :: Maybe RequestHeader -> Array RequestHeader -> Array RequestHeader
@@ -278,15 +252,19 @@ affjax req = do
     Just h | not $ any (on eq requestHeaderName h) hs -> hs `Arr.snoc` h
     _ -> hs
 
-  parseJSON :: String -> F Foreign
-  parseJSON = either (fail <<< JSONError) (pure <<< toForeign) <<< jsonParser
+  parseJSON :: String -> F Json
+  parseJSON = either (fail <<< ForeignError) pure <<< jsonParser
 
-  fromResponse' :: ResponseContent -> F b
-  fromResponse' = case snd responseSettings of
-    JSONResponse -> fromResponse <=< parseJSON <=< readString
-    _ -> fromResponse
+  fromResponse' :: Foreign -> F a
+  fromResponse' rc = case rt of
+    ArrayBufferResponse coe -> unsafeReadTagged "ArrayBuffer" rc
+    BlobResponse coe -> unsafeReadTagged "Blob" rc
+    DocumentResponse coe -> unsafeReadTagged "Document" rc
+    JSONResponse coe -> coe $ parseJSON =<< unsafeReadTagged "String" rc
+    StringResponse coe -> unsafeReadTagged "String" rc
+    IgnoredResponse coe -> coe $ pure unit
 
-type AjaxRequest =
+type AjaxRequest a =
   { method :: String
   , url :: URL
   , headers :: Array { field :: String, value :: String }
@@ -297,4 +275,9 @@ type AjaxRequest =
   , withCredentials :: Boolean
   }
 
-foreign import _ajax :: forall e. Fn2 (String -> String -> ResponseHeader) AjaxRequest (AC.EffFnAff (ajax :: AJAX | e) (AffjaxResponse Foreign))
+foreign import _ajax
+  :: forall a
+   . Fn2
+      (String -> String -> ResponseHeader)
+      (AjaxRequest a)
+      (AC.EffectFnAff (AffjaxResponseT Foreign))
