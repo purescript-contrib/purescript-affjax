@@ -10,20 +10,38 @@ import Web.DOM.Document (Document)
 import Web.File.Blob (Blob)
 import Web.XHR.FormData (FormData)
 
-data RequestContent
+data Request
   = ArrayView (forall r. (forall a. A.ArrayView a -> r) -> r)
-  | BlobRequest Blob
-  | DocumentRequest Document
-  | StringRequest String
-  | FormDataRequest FormData
-  | FormURLEncodedRequest FormURLEncoded
-  | JsonRequest Json
+  | Blob Blob
+  | Document Document
+  | String String
+  | FormData FormData
+  | FormURLEncoded FormURLEncoded
+  | Json Json
 
-arrayView :: forall a. A.ArrayView a -> RequestContent
+arrayView :: forall a. A.ArrayView a -> Request
 arrayView av = ArrayView \f -> f av
 
-defaultMediaType :: RequestContent -> Maybe MediaType
-defaultMediaType = case _ of
-  FormURLEncodedRequest _ -> Just applicationFormURLEncoded
-  JsonRequest _ -> Just applicationJSON
+blob :: Blob -> Request
+blob = Blob
+
+document :: Document -> Request
+document = Document
+
+string :: String -> Request
+string = String
+
+formData :: FormData -> Request
+formData = FormData
+
+formURLEncoded :: FormURLEncoded -> Request
+formURLEncoded = FormURLEncoded
+
+json :: Json -> Request
+json = Json
+
+toMediaType :: Request -> Maybe MediaType
+toMediaType = case _ of
+  FormURLEncoded _ -> Just applicationFormURLEncoded
+  Json _ -> Just applicationJSON
   _ -> Nothing

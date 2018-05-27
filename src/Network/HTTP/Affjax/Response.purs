@@ -10,44 +10,44 @@ import Data.MediaType.Common (applicationJSON)
 import Web.DOM.Document (Document)
 import Web.File.Blob (Blob)
 
-data AffjaxResponse a
-  = ArrayBufferResponse (forall f. f ArrayBuffer -> f a)
-  | BlobResponse (forall f. f Blob -> f a)
-  | DocumentResponse (forall f. f Document -> f a)
-  | JSONResponse (forall f. f Json -> f a)
-  | StringResponse (forall f. f String -> f a)
-  | IgnoredResponse (forall f. f Unit -> f a)
+data Response a
+  = ArrayBuffer (forall f. f ArrayBuffer -> f a)
+  | Blob (forall f. f Blob -> f a)
+  | Document (forall f. f Document -> f a)
+  | Json (forall f. f Json -> f a)
+  | String (forall f. f String -> f a)
+  | Ignore (forall f. f Unit -> f a)
 
-arrayBuffer :: AffjaxResponse ArrayBuffer
-arrayBuffer = ArrayBufferResponse identity
+arrayBuffer :: Response ArrayBuffer
+arrayBuffer = ArrayBuffer identity
 
-blob :: AffjaxResponse Blob
-blob = BlobResponse identity
+blob :: Response Blob
+blob = Blob identity
 
-document :: AffjaxResponse Document
-document = DocumentResponse identity
+document :: Response Document
+document = Document identity
 
-json :: AffjaxResponse Json
-json = JSONResponse identity
+json :: Response Json
+json = Json identity
 
-string :: AffjaxResponse String
-string = StringResponse identity
+string :: Response String
+string = String identity
 
-ignored :: AffjaxResponse Unit
-ignored = IgnoredResponse identity
+ignore :: Response Unit
+ignore = Ignore identity
 
-responseTypeToString :: forall a. AffjaxResponse a -> String
-responseTypeToString =
+toResponseType :: forall a. Response a -> String
+toResponseType =
   case _ of
-    ArrayBufferResponse _ -> "arraybuffer"
-    BlobResponse _ -> "blob"
-    DocumentResponse _ -> "document"
-    JSONResponse _ -> "text" -- IE doesn't support "json" responseType
-    StringResponse _ -> "text"
-    IgnoredResponse _ -> "text"
+    ArrayBuffer _ -> "arraybuffer"
+    Blob _ -> "blob"
+    Document _ -> "document"
+    Json _ -> "text" -- IE doesn't support "json" responseType
+    String _ -> "text"
+    Ignore _ -> ""
 
-responseTypeToMediaType :: forall a. AffjaxResponse a -> Maybe MediaType
-responseTypeToMediaType =
+toMediaType :: forall a. Response a -> Maybe MediaType
+toMediaType =
   case _ of
-    JSONResponse _ -> Just applicationJSON
+    Json _ -> Just applicationJSON
     _ -> Nothing

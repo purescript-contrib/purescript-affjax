@@ -15,7 +15,8 @@ import Effect.Console (log, logShow)
 import Effect.Exception (error, throwException)
 import Foreign.Object as FO
 import Network.HTTP.Affjax as AX
-import Network.HTTP.Affjax.Response as AXR
+import Network.HTTP.Affjax.Request as Request
+import Network.HTTP.Affjax.Response as Response
 import Network.HTTP.StatusCode (StatusCode(..))
 
 foreign import logAny :: forall a. a -> Effect Unit
@@ -57,41 +58,41 @@ main = void $ runAff (either (\e -> logShow e *> throwException e) (const $ log 
   let retryPolicy = AX.defaultRetryPolicy { timeout = Just (Milliseconds 500.0), shouldRetryWithStatusCode = \_ -> true }
 
   A.log "GET /does-not-exist: should be 404 Not found after retries"
-  (attempt $ AX.retry retryPolicy (AX.affjax AXR.ignored) $ AX.defaultRequest { url = doesNotExist }) >>= assertRight >>= \res -> do
+  (attempt $ AX.retry retryPolicy (AX.affjax Response.ignore) $ AX.defaultRequest { url = doesNotExist }) >>= assertRight >>= \res -> do
     assertEq notFound404 res.status
 
   A.log "GET /mirror: should be 200 OK"
-  (attempt $ AX.affjax AXR.ignored $ AX.defaultRequest { url = mirror }) >>= assertRight >>= \res -> do
+  (attempt $ AX.affjax Response.ignore $ AX.defaultRequest { url = mirror }) >>= assertRight >>= \res -> do
     assertEq ok200 res.status
 
   A.log "GET /does-not-exist: should be 404 Not found"
-  (attempt $ AX.affjax AXR.ignored $ AX.defaultRequest { url = doesNotExist }) >>= assertRight >>= \res -> do
+  (attempt $ AX.affjax Response.ignore $ AX.defaultRequest { url = doesNotExist }) >>= assertRight >>= \res -> do
     assertEq notFound404 res.status
 
   A.log "GET /not-json: invalid JSON with Foreign response should throw an error"
-  void $ assertLeft =<< attempt (AX.get AXR.json doesNotExist)
+  void $ assertLeft =<< attempt (AX.get Response.json doesNotExist)
 
   A.log "GET /not-json: invalid JSON with String response should be ok"
-  (attempt $ AX.get AXR.string notJson) >>= assertRight >>= \res -> do
+  (attempt $ AX.get Response.string notJson) >>= assertRight >>= \res -> do
     assertEq ok200 res.status
 
   A.log "POST /mirror: should use the POST method"
-  (attempt $ AX.post AXR.json mirror (AX.StringRequest "test")) >>= assertRight >>= \res -> do
+  (attempt $ AX.post Response.json mirror (Request.string "test")) >>= assertRight >>= \res -> do
     assertEq ok200 res.status
     assertEq (Just "POST") (J.toString =<< FO.lookup "method" =<< J.toObject res.response)
 
   A.log "PUT with a request body"
   let content = "the quick brown fox jumps over the lazy dog"
-  (attempt $ AX.put AXR.json mirror (AX.StringRequest content)) >>= assertRight >>= \res -> do
+  (attempt $ AX.put Response.json mirror (Request.string content)) >>= assertRight >>= \res -> do
     assertEq ok200 res.status
     assertEq (Just "PUT") (J.toString =<< FO.lookup "method" =<< J.toObject res.response)
     assertEq (Just content) (J.toString =<< FO.lookup "body" =<< J.toObject res.response)
 
   A.log "Testing CORS, HTTPS"
-  (attempt $ AX.get AXR.json "https://cors-test.appspot.com/test") >>= assertRight >>= \res -> do
+  (attempt $ AX.get Response.json "https://cors-test.appspot.com/test") >>= assertRight >>= \res -> do
     assertEq ok200 res.status
     -- assertEq (Just "test=test") (lookupHeader "Set-Cookie" res.headers)
 
   A.log "Testing cancellation"
-  forkAff (AX.post_ mirror (AX.StringRequest "do it now")) >>= killFiber (error "Pull the cord!")
+  forkAff (AX.post_ mirror (Request.string "do it now")) >>= killFiber (error "Pull the cord!")
   assertMsg "Should have been canceled" true
