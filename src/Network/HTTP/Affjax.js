@@ -74,15 +74,13 @@ exports._ajax = function () {
       xhr.withCredentials = options.withCredentials;
       xhr.send(options.content);
 
-      return function (/* error */) {
-        return function (cancelErrback, cancelCallback) {
-          try {
-            xhr.abort();
-          } catch (e) {
-            return cancelErrback(e);
-          }
-          return cancelCallback();
-        };
+      return function (error, cancelErrback, cancelCallback) {
+        try {
+          xhr.abort();
+        } catch (e) {
+          return cancelErrback(e);
+        }
+        return cancelCallback();
       };
     };
   };
