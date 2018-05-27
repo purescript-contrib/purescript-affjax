@@ -59,6 +59,7 @@ exports._ajax = function () {
       xhr.onload = function () {
         callback({
           status: xhr.status,
+          statusText: xhr.statusText,
           headers: xhr.getAllResponseHeaders().split("\r\n")
             .filter(function (header) {
               return header.length > 0;
@@ -85,4 +86,3 @@ exports._ajax = function () {
     };
   };
 }();
-
