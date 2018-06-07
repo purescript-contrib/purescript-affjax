@@ -38,7 +38,7 @@ import Effect.Aff.Compat as AC
 import Effect.Class (liftEffect)
 import Effect.Exception (Error, error)
 import Effect.Ref as Ref
-import Foreign (F, Foreign, ForeignError(JSONError), fail, readString, toForeign)
+import Foreign (F, Foreign, ForeignError(ForeignError), fail, readString, unsafeToForeign)
 import Math (max, pow)
 import Network.HTTP.Affjax.Request (class Requestable, RequestContent, toRequest)
 import Network.HTTP.Affjax.Response (class Respondable, ResponseContent, ResponseType(..), fromResponse, responseType, responseTypeToString)
@@ -258,7 +258,7 @@ affjax req = do
     _ -> hs
 
   parseJSON :: String -> F Foreign
-  parseJSON = either (fail <<< JSONError) (pure <<< toForeign) <<< jsonParser
+  parseJSON = either (fail <<< ForeignError) (pure <<< unsafeToForeign) <<< jsonParser
 
   fromResponse' :: ResponseContent -> F b
   fromResponse' = case snd responseSettings of
