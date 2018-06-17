@@ -1,7 +1,7 @@
 # How to run these tests
 
-* Compile the code and tests, by running `node_modules/.bin/gulp`
+* Run `npm install` and `bower install` to install the dependencies
 * Start the harness server, by running `node test-server.js`
-* Visit <http://localhost:3838> in your browser
+* Run `npm test`
 * Check the console: the text "affjax: All good!" should appear if and only if
   all the tests passed.
