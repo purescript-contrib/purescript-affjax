@@ -27,16 +27,19 @@ You can construct requests with the `affjax` function:
 module Main where
 
 import Prelude
-import Control.Monad.Eff.Console (log)
-import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Aff (launchAff)
+
+import Data.Argonaut.Core as J
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
-import Network.HTTP.Affjax (affjax, defaultRequest)
+import Effect.Aff (launchAff)
+import Effect.Class (liftEffect)
+import Effect.Console (log)
+import Network.HTTP.Affjax as AX
+import Network.HTTP.Affjax.Response as AXRes
 
 main = launchAff $ do
-  res <- affjax $ defaultRequest { url = "/api", method = Left GET }
-  liftEff $ log $ "GET /api response: " <> res.response
+  res <- AX.affjax AXRes.json (AX.defaultRequest { url = "/api", method = Left GET })
+  liftEffect $ log $ "GET /api response: " <> J.stringify res.response
 ```
 
 (`defaultRequest` is a record value that has all the required fields pre-set for convenient overriding when making a request.)
@@ -44,19 +47,17 @@ main = launchAff $ do
 Or use of a number of helpers for common cases:
 
 ```purescript
-import Network.HTTP.Affjax (get, post)
+import Network.HTTP.Affjax.Request as AXReq
 
 main = launchAff $ do
-  res1 <- get "/api"
-  liftEff $ log $ "GET /api response: " <> res1.response
+  res1 <- AX.get AXRes.json "/api"
+  liftEffect $ log $ "GET /api response: " <> J.stringify res1.response
 
-  res2 <- post "/api" someData
-  liftEff $ log $ "POST /api response: " <> res2.response
+  res2 <- AX.post AXRes.json "/api" (AXReq.json (J.fromString "test"))
+  liftEffect $ log $ "POST /api response: " <> J.stringify res2.response
 ```
 
 See the module documentation for a full list of these helpers.
-
-When sending data in a request the Requestable class enables automatic conversion into a format that is acceptable for an XHR request. Correspondingly there is a Respondable class for reading data that comes back from the server.
 
 ## Module documentation
 
