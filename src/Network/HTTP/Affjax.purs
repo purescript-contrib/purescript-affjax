@@ -51,6 +51,9 @@ import Network.HTTP.StatusCode (StatusCode(..))
 -- | The result type for Affjax requests.
 type Affjax a = Aff (AffjaxResponse a)
 
+-- | A record that contains all the information to perform an HTTP request.
+-- | Instead of constructing the record from scratch it is often easier to build
+-- | one based on `defaultRequest`.
 type AffjaxRequest =
   { method :: Either Method CustomMethod
   , url :: URL
@@ -61,6 +64,17 @@ type AffjaxRequest =
   , withCredentials :: Boolean
   }
 
+-- | A record of the type `AffjaxRequest` that has all fields set to default
+-- | values. This record can be used as the as the foundation for constructing
+-- | custom requests.
+-- |
+-- | As an example
+-- |
+-- | ```purescript
+-- | defaultRequest { url = "/api/user", method = Left POST }
+-- | ```
+-- |
+-- | Represents a POST request to the URL `/api/user`.
 defaultRequest :: AffjaxRequest
 defaultRequest =
   { method: Left GET
@@ -210,7 +224,22 @@ retry policy run req = do
           go failureRef (n + 1)
         Right resp -> pure resp
 
--- | Makes an `Affjax` request.
+-- | Makes an HTTP request. The first argument specifies how the HTTP response
+-- | body should be interpreted.
+-- |
+-- | The example below performs a `GET` request to the URL `/resource`/ and
+-- | interprets the response body as JSON.
+-- |
+-- | ```purescript
+-- | affjax json (defaultRequest { url = "/resource", method = Left GET })
+-- | ```
+-- |
+-- | For common cases helper functions can often be used instead of `affjax` .
+-- | For instance, the above example is equivalent to the following.
+-- |
+-- | ```purescript
+-- | get json "/resource"
+-- | ```
 affjax :: forall a. Response.Response a -> AffjaxRequest -> Affjax a
 affjax rt req = do
   res <- AC.fromEffectFnAff $ runFn2 _ajax responseHeader req'

@@ -10,6 +10,7 @@ import Data.MediaType.Common (applicationJSON)
 import Web.DOM.Document (Document)
 import Web.File.Blob (Blob)
 
+-- | Used to represent how a HTTP response body should be interpreted.
 data Response a
   = ArrayBuffer (forall f. f ArrayBuffer -> f a)
   | Blob (forall f. f Blob -> f a)
@@ -36,6 +37,8 @@ string = String identity
 ignore :: Response Unit
 ignore = Ignore identity
 
+-- | Converts a `Response a` into a string representation of the response type
+-- | that it represents.
 toResponseType :: forall a. Response a -> String
 toResponseType =
   case _ of
