@@ -10,6 +10,8 @@ import Web.DOM.Document (Document)
 import Web.File.Blob (Blob)
 import Web.XHR.FormData (FormData)
 
+-- | Represents data for an HTTP request that will be included in the request
+-- | body.
 data Request
   = ArrayView (forall r. (forall a. A.ArrayView a -> r) -> r)
   | Blob Blob
