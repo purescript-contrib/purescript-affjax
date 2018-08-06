@@ -65,7 +65,7 @@ type AffjaxRequest =
   }
 
 -- | A record of the type `AffjaxRequest` that has all fields set to default
--- | values. This record can be used as the as the foundation for constructing
+-- | values. This record can be used as the foundation for constructing
 -- | custom requests.
 -- |
 -- | As an example
