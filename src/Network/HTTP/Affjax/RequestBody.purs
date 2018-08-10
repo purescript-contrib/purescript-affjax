@@ -1,4 +1,4 @@
-module Network.HTTP.Affjax.Request where
+module Network.HTTP.Affjax.RequestBody where
 
 import Data.Argonaut.Core (Json)
 import Data.ArrayBuffer.Types as A
@@ -12,7 +12,7 @@ import Web.XHR.FormData (FormData)
 
 -- | Represents data for an HTTP request that will be included in the request
 -- | body.
-data Request
+data RequestBody
   = ArrayView (forall r. (forall a. A.ArrayView a -> r) -> r)
   | Blob Blob
   | Document Document
@@ -21,28 +21,28 @@ data Request
   | FormURLEncoded FormURLEncoded
   | Json Json
 
-arrayView :: forall a. A.ArrayView a -> Request
+arrayView :: forall a. A.ArrayView a -> RequestBody
 arrayView av = ArrayView \f -> f av
 
-blob :: Blob -> Request
+blob :: Blob -> RequestBody
 blob = Blob
 
-document :: Document -> Request
+document :: Document -> RequestBody
 document = Document
 
-string :: String -> Request
+string :: String -> RequestBody
 string = String
 
-formData :: FormData -> Request
+formData :: FormData -> RequestBody
 formData = FormData
 
-formURLEncoded :: FormURLEncoded -> Request
+formURLEncoded :: FormURLEncoded -> RequestBody
 formURLEncoded = FormURLEncoded
 
-json :: Json -> Request
+json :: Json -> RequestBody
 json = Json
 
-toMediaType :: Request -> Maybe MediaType
+toMediaType :: RequestBody -> Maybe MediaType
 toMediaType = case _ of
   FormURLEncoded _ -> Just applicationFormURLEncoded
   Json _ -> Just applicationJSON
