@@ -45,7 +45,7 @@ main = launchAff $ do
 
 (`defaultRequest` is a record value that has all the required fields pre-set for convenient overriding when making a request.)
 
-Or use of a number of helpers for common cases:
+Or use of a number of helpers for common `get`, `post`, `put`, `delete`, and `patch` cases:
 
 ```purescript
 import Affjax.RequestBody as RequestBody
@@ -62,7 +62,7 @@ main = launchAff $ do
     Right json -> log $ "POST /api response: " <> J.stringify json
 ```
 
-See the module documentation for a full list of these helpers.
+See the module documentation for a full list of these helpers and their variations.
 
 ## Module documentation
 
