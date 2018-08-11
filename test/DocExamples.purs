@@ -2,15 +2,15 @@ module Test.DocExamples where
 
 import Prelude
 
+import Affjax as AX
+import Affjax.RequestBody as RequestBody
+import Affjax.ResponseFormat as ResponseFormat
 import Data.Argonaut.Core as J
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Effect.Aff (launchAff)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Network.HTTP.Affjax as AX
-import Network.HTTP.Affjax.RequestBody as RequestBody
-import Network.HTTP.Affjax.ResponseFormat as ResponseFormat
 
 main = launchAff $ do
   res <- AX.request ResponseFormat.json (AX.defaultRequest { url = "/api", method = Left GET })

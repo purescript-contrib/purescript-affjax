@@ -1,4 +1,4 @@
-module Network.HTTP.Affjax.ResponseFormat where
+module Affjax.ResponseFormat where
 
 import Prelude
 

@@ -1,4 +1,4 @@
-module Network.HTTP.Affjax
+module Affjax
   ( RequestOptions, defaultRequest
   , Response
   , URL
@@ -16,6 +16,11 @@ module Network.HTTP.Affjax
 
 import Prelude
 
+import Affjax.RequestBody as RequestBody
+import Affjax.RequestHeader (RequestHeader(..), requestHeaderName, requestHeaderValue)
+import Affjax.ResponseFormat as ResponseFormat
+import Affjax.ResponseHeader (ResponseHeader, responseHeader)
+import Affjax.StatusCode (StatusCode(..))
 import Control.Monad.Except (runExcept, throwError)
 import Control.Parallel (parOneOf)
 import Data.Argonaut.Core (Json)
@@ -41,11 +46,6 @@ import Effect.Exception (Error, error)
 import Effect.Ref as Ref
 import Foreign (F, Foreign, ForeignError(..), fail, renderForeignError, unsafeReadTagged, unsafeToForeign)
 import Math as Math
-import Network.HTTP.Affjax.RequestBody as RequestBody
-import Network.HTTP.Affjax.ResponseFormat as ResponseFormat
-import Network.HTTP.RequestHeader (RequestHeader(..), requestHeaderName, requestHeaderValue)
-import Network.HTTP.ResponseHeader (ResponseHeader, responseHeader)
-import Network.HTTP.StatusCode (StatusCode(..))
 
 -- | A record that contains all the information to perform an HTTP request.
 -- | Instead of constructing the record from scratch it is often easier to build

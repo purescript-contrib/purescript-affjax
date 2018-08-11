@@ -2,6 +2,10 @@ module Test.Main where
 
 import Prelude
 
+import Affjax as AX
+import Affjax.RequestBody as RequestBody
+import Affjax.ResponseFormat as ResponseFormat
+import Affjax.StatusCode (StatusCode(..))
 import Control.Monad.Error.Class (throwError)
 import Data.Argonaut.Core as J
 import Data.Either (Either(..), either)
@@ -14,10 +18,6 @@ import Effect.Class.Console as A
 import Effect.Console (log, logShow)
 import Effect.Exception (error, throwException)
 import Foreign.Object as FO
-import Network.HTTP.Affjax as AX
-import Network.HTTP.Affjax.RequestBody as RequestBody
-import Network.HTTP.Affjax.ResponseFormat as ResponseFormat
-import Network.HTTP.StatusCode (StatusCode(..))
 
 foreign import logAny :: forall a. a -> Effect Unit
 

@@ -1,4 +1,4 @@
-module Network.HTTP.Affjax.RequestBody where
+module Affjax.RequestBody where
 
 import Data.Argonaut.Core (Json)
 import Data.ArrayBuffer.Types as A
