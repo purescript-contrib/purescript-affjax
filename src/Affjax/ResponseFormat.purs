@@ -7,6 +7,8 @@ import Data.ArrayBuffer.Types (ArrayBuffer)
 import Data.Maybe (Maybe(..))
 import Data.MediaType (MediaType)
 import Data.MediaType.Common (applicationJSON)
+import Foreign (Foreign, ForeignError)
+import Foreign as Foreign
 import Web.DOM.Document (Document)
 import Web.File.Blob (Blob)
 
@@ -54,3 +56,12 @@ toMediaType =
   case _ of
     Json _ -> Just applicationJSON
     _ -> Nothing
+
+-- | Used when an error occurs when attempting to decode into a particular
+-- | response format. The error that occurred when decoding is included, along
+-- | with the value that decoding was attempted on.
+data ResponseFormatError = ResponseFormatError ForeignError Foreign
+
+printResponseFormatError :: ResponseFormatError → String
+printResponseFormatError (ResponseFormatError err _) =
+  Foreign.renderForeignError err

@@ -34,12 +34,13 @@ import Data.Argonaut.Core as J
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Effect.Aff (launchAff)
-import Effect.Class (liftEffect)
-import Effect.Console (log)
+import Effect.Class.Console (log)
 
 main = launchAff $ do
   res <- AX.request ResponseFormat.json (AX.defaultRequest { url = "/api", method = Left GET })
-  liftEffect $ log $ "GET /api response: " <> J.stringify res.response
+  case res.body of
+    Left err -> log $ "GET /api response failed to decode: " <> AX.printResponseFormatError err
+    Right json -> log $ "GET /api response: " <> J.stringify json
 ```
 
 (`defaultRequest` is a record value that has all the required fields pre-set for convenient overriding when making a request.)
@@ -51,10 +52,14 @@ import Affjax.RequestBody as RequestBody
 
 main = launchAff $ do
   res1 <- AX.get ResponseFormat.json "/api"
-  liftEffect $ log $ "GET /api response: " <> J.stringify res1.response
+  case res1.body of
+    Left err -> log $ "GET /api response failed to decode: " <> AX.printResponseFormatError err
+    Right json -> log $ "GET /api response: " <> J.stringify json
 
   res2 <- AX.post ResponseFormat.json "/api" (RequestBody.json (J.fromString "test"))
-  liftEffect $ log $ "POST /api response: " <> J.stringify res2.response
+  case res2.body of
+    Left err -> log $ "POST /api response failed to decode: " <> AX.printResponseFormatError err
+    Right json -> log $ "POST /api response: " <> J.stringify json
 ```
 
 See the module documentation for a full list of these helpers.

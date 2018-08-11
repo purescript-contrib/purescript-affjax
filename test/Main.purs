@@ -78,8 +78,9 @@ main = void $ runAff (either (\e -> logShow e *> throwException e) (const $ log 
     (attempt $ AX.request ResponseFormat.ignore $ AX.defaultRequest { url = doesNotExist }) >>= assertRight >>= \res -> do
       assertEq notFound404 res.status
 
-    A.log "GET /not-json: invalid JSON with Foreign response should throw an error"
-    void $ assertLeft =<< attempt (AX.get ResponseFormat.json doesNotExist)
+    A.log "GET /not-json: invalid JSON with Foreign response should return an error"
+    attempt (AX.get ResponseFormat.json doesNotExist) >>= assertRight >>= \res -> do
+      void $ assertLeft res.body
 
     A.log "GET /not-json: invalid JSON with String response should be ok"
     (attempt $ AX.get ResponseFormat.string notJson) >>= assertRight >>= \res -> do
@@ -88,14 +89,16 @@ main = void $ runAff (either (\e -> logShow e *> throwException e) (const $ log 
     A.log "POST /mirror: should use the POST method"
     (attempt $ AX.post ResponseFormat.json mirror (RequestBody.string "test")) >>= assertRight >>= \res -> do
       assertEq ok200 res.status
-      assertEq (Just "POST") (J.toString =<< FO.lookup "method" =<< J.toObject res.response)
+      json <- assertRight res.body
+      assertEq (Just "POST") (J.toString =<< FO.lookup "method" =<< J.toObject json)
 
     A.log "PUT with a request body"
     let content = "the quick brown fox jumps over the lazy dog"
     (attempt $ AX.put ResponseFormat.json mirror (RequestBody.string content)) >>= assertRight >>= \res -> do
       assertEq ok200 res.status
-      assertEq (Just "PUT") (J.toString =<< FO.lookup "method" =<< J.toObject res.response)
-      assertEq (Just content) (J.toString =<< FO.lookup "body" =<< J.toObject res.response)
+      json <- assertRight res.body
+      assertEq (Just "PUT") (J.toString =<< FO.lookup "method" =<< J.toObject json)
+      assertEq (Just content) (J.toString =<< FO.lookup "body" =<< J.toObject json)
 
     A.log "Testing CORS, HTTPS"
     (attempt $ AX.get ResponseFormat.json "https://cors-test.appspot.com/test") >>= assertRight >>= \res -> do
