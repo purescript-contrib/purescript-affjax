@@ -1,4 +1,4 @@
-module Network.HTTP.Affjax.Response where
+module Network.HTTP.Affjax.ResponseFormat where
 
 import Prelude
 
@@ -11,7 +11,7 @@ import Web.DOM.Document (Document)
 import Web.File.Blob (Blob)
 
 -- | Used to represent how a HTTP response body should be interpreted.
-data Response a
+data ResponseFormat a
   = ArrayBuffer (forall f. f ArrayBuffer -> f a)
   | Blob (forall f. f Blob -> f a)
   | Document (forall f. f Document -> f a)
@@ -19,37 +19,37 @@ data Response a
   | String (forall f. f String -> f a)
   | Ignore (forall f. f Unit -> f a)
 
-arrayBuffer :: Response ArrayBuffer
+arrayBuffer :: ResponseFormat ArrayBuffer
 arrayBuffer = ArrayBuffer identity
 
-blob :: Response Blob
+blob :: ResponseFormat Blob
 blob = Blob identity
 
-document :: Response Document
+document :: ResponseFormat Document
 document = Document identity
 
-json :: Response Json
+json :: ResponseFormat Json
 json = Json identity
 
-string :: Response String
+string :: ResponseFormat String
 string = String identity
 
-ignore :: Response Unit
+ignore :: ResponseFormat Unit
 ignore = Ignore identity
 
 -- | Converts a `Response a` into a string representation of the response type
 -- | that it represents.
-toResponseType :: forall a. Response a -> String
+toResponseType :: forall a. ResponseFormat a -> String
 toResponseType =
   case _ of
     ArrayBuffer _ -> "arraybuffer"
     Blob _ -> "blob"
     Document _ -> "document"
-    Json _ -> "text" -- IE doesn't support "json" responseType
+    Json _ -> "text" -- IE doesn't support "json" ResponseFormat
     String _ -> "text"
     Ignore _ -> ""
 
-toMediaType :: forall a. Response a -> Maybe MediaType
+toMediaType :: forall a. ResponseFormat a -> Maybe MediaType
 toMediaType =
   case _ of
     Json _ -> Just applicationJSON

@@ -1,9 +1,8 @@
 module Network.HTTP.Affjax
-  ( Affjax
-  , AffjaxRequest, defaultRequest
-  , AffjaxResponse
+  ( RequestOptions, defaultRequest
+  , Response
   , URL
-  , affjax
+  , request
   , get
   , post, post_, post', post_'
   , put, put_, put', put_'
@@ -42,29 +41,26 @@ import Effect.Exception (Error, error)
 import Effect.Ref as Ref
 import Foreign (F, Foreign, ForeignError(..), fail, renderForeignError, unsafeReadTagged, unsafeToForeign)
 import Math as Math
-import Network.HTTP.Affjax.Request as Request
-import Network.HTTP.Affjax.Response as Response
+import Network.HTTP.Affjax.RequestBody as RequestBody
+import Network.HTTP.Affjax.ResponseFormat as ResponseFormat
 import Network.HTTP.RequestHeader (RequestHeader(..), requestHeaderName, requestHeaderValue)
 import Network.HTTP.ResponseHeader (ResponseHeader, responseHeader)
 import Network.HTTP.StatusCode (StatusCode(..))
 
--- | The result type for Affjax requests.
-type Affjax a = Aff (AffjaxResponse a)
-
 -- | A record that contains all the information to perform an HTTP request.
 -- | Instead of constructing the record from scratch it is often easier to build
 -- | one based on `defaultRequest`.
-type AffjaxRequest =
+type RequestOptions =
   { method :: Either Method CustomMethod
   , url :: URL
   , headers :: Array RequestHeader
-  , content :: Maybe Request.Request
+  , content :: Maybe RequestBody.RequestBody
   , username :: Maybe String
   , password :: Maybe String
   , withCredentials :: Boolean
   }
 
--- | A record of the type `AffjaxRequest` that has all fields set to default
+-- | A record of the type `RequestOptions` that has all fields set to default
 -- | values. This record can be used as the foundation for constructing
 -- | custom requests.
 -- |
@@ -75,7 +71,7 @@ type AffjaxRequest =
 -- | ```
 -- |
 -- | Represents a POST request to the URL `/api/user`.
-defaultRequest :: AffjaxRequest
+defaultRequest :: RequestOptions
 defaultRequest =
   { method: Left GET
   , url: "/"
@@ -86,8 +82,8 @@ defaultRequest =
   , withCredentials: false
   }
 
--- | The type of records that will be received as an Affjax response.
-type AffjaxResponse a =
+-- | The type of records that represents a received HTTP response.
+type Response a =
   { status :: StatusCode
   , statusText :: String
   , headers :: Array ResponseHeader
@@ -98,75 +94,75 @@ type AffjaxResponse a =
 type URL = String
 
 -- | Makes a `GET` request to the specified URL.
-get :: forall a. Response.Response a -> URL -> Affjax a
-get rt u = affjax rt $ defaultRequest { url = u }
+get :: forall a. ResponseFormat.ResponseFormat a -> URL -> Aff (Response a)
+get rt u = request rt $ defaultRequest { url = u }
 
 -- | Makes a `POST` request to the specified URL, sending data.
-post :: forall a. Response.Response a -> URL -> Request.Request -> Affjax a
-post rt u c = affjax rt $ defaultRequest { method = Left POST, url = u, content = Just c }
+post :: forall a. ResponseFormat.ResponseFormat a -> URL -> RequestBody.RequestBody -> Aff (Response a)
+post rt u c = request rt $ defaultRequest { method = Left POST, url = u, content = Just c }
 
 -- | Makes a `POST` request to the specified URL with the option to send data.
-post' :: forall a. Response.Response a -> URL -> Maybe Request.Request -> Affjax a
-post' rt u c = affjax rt $ defaultRequest { method = Left POST, url = u, content = c }
+post' :: forall a. ResponseFormat.ResponseFormat a -> URL -> Maybe RequestBody.RequestBody -> Aff (Response a)
+post' rt u c = request rt $ defaultRequest { method = Left POST, url = u, content = c }
 
 -- | Makes a `POST` request to the specified URL, sending data and ignoring the
 -- | response.
-post_ :: URL -> Request.Request -> Affjax Unit
-post_ = post Response.ignore
+post_ :: URL -> RequestBody.RequestBody -> Aff (Response Unit)
+post_ = post ResponseFormat.ignore
 
 -- | Makes a `POST` request to the specified URL with the option to send data,
 -- | and ignores the response.
-post_' :: URL -> Maybe Request.Request -> Affjax Unit
-post_' = post' Response.ignore
+post_' :: URL -> Maybe RequestBody.RequestBody -> Aff (Response Unit)
+post_' = post' ResponseFormat.ignore
 
 -- | Makes a `PUT` request to the specified URL, sending data.
-put :: forall a. Response.Response a -> URL -> Request.Request -> Affjax a
-put rt u c = affjax rt $ defaultRequest { method = Left PUT, url = u, content = Just c }
+put :: forall a. ResponseFormat.ResponseFormat a -> URL -> RequestBody.RequestBody -> Aff (Response a)
+put rt u c = request rt $ defaultRequest { method = Left PUT, url = u, content = Just c }
 
 -- | Makes a `PUT` request to the specified URL with the option to send data.
-put' :: forall a. Response.Response a -> URL -> Maybe Request.Request -> Affjax a
-put' rt u c = affjax rt $ defaultRequest { method = Left PUT, url = u, content = c }
+put' :: forall a. ResponseFormat.ResponseFormat a -> URL -> Maybe RequestBody.RequestBody -> Aff (Response a)
+put' rt u c = request rt $ defaultRequest { method = Left PUT, url = u, content = c }
 
 -- | Makes a `PUT` request to the specified URL, sending data and ignoring the
 -- | response.
-put_ :: URL -> Request.Request -> Affjax Unit
-put_ = put  Response.ignore
+put_ :: URL -> RequestBody.RequestBody -> Aff (Response Unit)
+put_ = put  ResponseFormat.ignore
 
 -- | Makes a `PUT` request to the specified URL with the option to send data,
 -- | and ignores the response.
-put_' :: URL -> Maybe Request.Request -> Affjax Unit
-put_' = put'  Response.ignore
+put_' :: URL -> Maybe RequestBody.RequestBody -> Aff (Response Unit)
+put_' = put'  ResponseFormat.ignore
 
 -- | Makes a `DELETE` request to the specified URL.
-delete :: forall a. Response.Response a -> URL -> Affjax a
-delete rt u = affjax rt $ defaultRequest { method = Left DELETE, url = u }
+delete :: forall a. ResponseFormat.ResponseFormat a -> URL -> Aff (Response a)
+delete rt u = request rt $ defaultRequest { method = Left DELETE, url = u }
 
 -- | Makes a `DELETE` request to the specified URL and ignores the response.
-delete_ :: URL -> Affjax Unit
-delete_ = delete Response.ignore
+delete_ :: URL -> Aff (Response Unit)
+delete_ = delete ResponseFormat.ignore
 
 -- | Makes a `PATCH` request to the specified URL, sending data.
-patch :: forall a. Response.Response a -> URL -> Request.Request -> Affjax a
-patch rt u c = affjax rt $ defaultRequest { method = Left PATCH, url = u, content = Just c }
+patch :: forall a. ResponseFormat.ResponseFormat a -> URL -> RequestBody.RequestBody -> Aff (Response a)
+patch rt u c = request rt $ defaultRequest { method = Left PATCH, url = u, content = Just c }
 
 -- | Makes a `PATCH` request to the specified URL with the option to send data.
-patch' :: forall a. Response.Response a -> URL -> Maybe Request.Request -> Affjax a
-patch' rt u c = affjax rt $ defaultRequest { method = Left PATCH, url = u, content = c }
+patch' :: forall a. ResponseFormat.ResponseFormat a -> URL -> Maybe RequestBody.RequestBody -> Aff (Response a)
+patch' rt u c = request rt $ defaultRequest { method = Left PATCH, url = u, content = c }
 
 -- | Makes a `PATCH` request to the specified URL, sending data and ignoring the
 -- | response.
-patch_ :: URL -> Request.Request -> Affjax Unit
-patch_ = patch Response.ignore
+patch_ :: URL -> RequestBody.RequestBody -> Aff (Response Unit)
+patch_ = patch ResponseFormat.ignore
 
 -- | Makes a `PATCH` request to the specified URL with the option to send data,
 -- | and ignores the response.
-patch_' :: URL -> Maybe Request.Request -> Affjax Unit
-patch_' = patch' Response.ignore
+patch_' :: URL -> Maybe RequestBody.RequestBody -> Aff (Response Unit)
+patch_' = patch' ResponseFormat.ignore
 
 -- | A sequence of retry delays, in milliseconds.
 type RetryDelayCurve = Int -> Milliseconds
 
--- | Expresses a policy for retrying Affjax requests with backoff.
+-- | Expresses a policy for retrying HTTP requests with backoff.
 type RetryPolicy =
   { timeout :: Maybe Milliseconds -- ^ the timeout in milliseconds, optional
   , delayCurve :: RetryDelayCurve
@@ -185,7 +181,7 @@ defaultRetryPolicy =
 type RetryState e a = Either (Either e a) a
 
 -- | Retry a request using a `RetryPolicy`. After the timeout, the last received response is returned; if it was not possible to communicate with the server due to an error, then this is bubbled up.
-retry :: forall a. RetryPolicy -> (AffjaxRequest -> Affjax a) -> AffjaxRequest -> Affjax a
+retry :: forall a. RetryPolicy -> (RequestOptions -> Aff (Response  a)) -> RequestOptions -> Aff (Response a)
 retry policy run req = do
   -- failureRef is either an exception or a failed request
   failureRef <- liftEffect $ Ref.new Nothing
@@ -203,8 +199,8 @@ retry policy run req = do
         Just resp -> pure resp
   where
     retryState
-      :: Either Error (AffjaxResponse a)
-      -> RetryState Error (AffjaxResponse a)
+      :: Either Error (Response a)
+      -> RetryState Error (Response a)
     retryState (Left exn) = Left $ Left exn
     retryState (Right resp) =
       case resp.status of
@@ -231,17 +227,17 @@ retry policy run req = do
 -- | interprets the response body as JSON.
 -- |
 -- | ```purescript
--- | affjax json (defaultRequest { url = "/resource", method = Left GET })
+-- | request json (defaultRequest { url = "/resource", method = Left GET })
 -- | ```
 -- |
--- | For common cases helper functions can often be used instead of `affjax` .
+-- | For common cases helper functions can often be used instead of `request` .
 -- | For instance, the above example is equivalent to the following.
 -- |
 -- | ```purescript
 -- | get json "/resource"
 -- | ```
-affjax :: forall a. Response.Response a -> AffjaxRequest -> Affjax a
-affjax rt req = do
+request :: forall a. ResponseFormat.ResponseFormat a -> RequestOptions -> Aff (Response a)
+request rt req = do
   res <- AC.fromEffectFnAff $ runFn2 _ajax responseHeader req'
   case runExcept (fromResponse' res.response) of
     Left err -> throwError $ error $ intercalate "\n" (map renderForeignError err)
@@ -254,26 +250,26 @@ affjax rt req = do
     , url: req.url
     , headers: (\h -> { field: requestHeaderName h, value: requestHeaderValue h }) <$> headers req.content
     , content: toNullable (extractContent <$> req.content)
-    , responseType: Response.toResponseType rt
+    , responseType: ResponseFormat.toResponseType rt
     , username: toNullable req.username
     , password: toNullable req.password
     , withCredentials: req.withCredentials
     }
 
-  extractContent :: Request.Request -> Foreign
+  extractContent :: RequestBody.RequestBody -> Foreign
   extractContent = case _ of
-    Request.ArrayView f → f unsafeToForeign
-    Request.Blob x → unsafeToForeign x
-    Request.Document x → unsafeToForeign x
-    Request.String x → unsafeToForeign x
-    Request.FormData x → unsafeToForeign x
-    Request.FormURLEncoded x → unsafeToForeign (FormURLEncoded.encode x)
-    Request.Json x → unsafeToForeign (J.stringify x)
+    RequestBody.ArrayView f → f unsafeToForeign
+    RequestBody.Blob x → unsafeToForeign x
+    RequestBody.Document x → unsafeToForeign x
+    RequestBody.String x → unsafeToForeign x
+    RequestBody.FormData x → unsafeToForeign x
+    RequestBody.FormURLEncoded x → unsafeToForeign (FormURLEncoded.encode x)
+    RequestBody.Json x → unsafeToForeign (J.stringify x)
 
-  headers :: Maybe Request.Request -> Array RequestHeader
+  headers :: Maybe RequestBody.RequestBody -> Array RequestHeader
   headers reqContent =
-    addHeader (ContentType <$> (Request.toMediaType =<< reqContent)) $
-      addHeader (Accept <$> Response.toMediaType rt)
+    addHeader (ContentType <$> (RequestBody.toMediaType =<< reqContent)) $
+      addHeader (Accept <$> ResponseFormat.toMediaType rt)
         req.headers
 
   addHeader :: Maybe RequestHeader -> Array RequestHeader -> Array RequestHeader
@@ -288,12 +284,12 @@ affjax rt req = do
 
   fromResponse' :: Foreign -> F a
   fromResponse' = case rt of
-    Response.ArrayBuffer _ -> unsafeReadTagged "ArrayBuffer"
-    Response.Blob _ -> unsafeReadTagged "Blob"
-    Response.Document _ -> unsafeReadTagged "Document"
-    Response.Json coe -> coe <<< parseJSON <=< unsafeReadTagged "String"
-    Response.String _ -> unsafeReadTagged "String"
-    Response.Ignore coe -> const $ coe (pure unit)
+    ResponseFormat.ArrayBuffer _ -> unsafeReadTagged "ArrayBuffer"
+    ResponseFormat.Blob _ -> unsafeReadTagged "Blob"
+    ResponseFormat.Document _ -> unsafeReadTagged "Document"
+    ResponseFormat.Json coe -> coe <<< parseJSON <=< unsafeReadTagged "String"
+    ResponseFormat.String _ -> unsafeReadTagged "String"
+    ResponseFormat.Ignore coe -> const $ coe (pure unit)
 
 type AjaxRequest a =
   { method :: String
@@ -311,4 +307,4 @@ foreign import _ajax
    . Fn2
       (String -> String -> ResponseHeader)
       (AjaxRequest a)
-      (AC.EffectFnAff (AffjaxResponse Foreign))
+      (AC.EffectFnAff (Response Foreign))
