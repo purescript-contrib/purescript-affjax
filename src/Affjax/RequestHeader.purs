@@ -1,4 +1,4 @@
-module Network.HTTP.RequestHeader where
+module Affjax.RequestHeader where
 
 import Prelude
 

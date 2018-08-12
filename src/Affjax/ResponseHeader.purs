@@ -1,4 +1,4 @@
-module Network.HTTP.ResponseHeader
+module Affjax.ResponseHeader
   ( ResponseHeader()
   , responseHeader
   , responseHeaderName

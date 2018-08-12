@@ -1,7 +1,7 @@
 language: node_js
 dist: trusty
 sudo: required
-node_js: 6
+node_js: stable
 install:
   - npm install bower -g
   - npm install
@@ -9,8 +9,7 @@ script:
   - bower install --production
   - npm run -s build
   - bower install
-  - node ./test-server.js &
-  - sleep 2 && npm -s test
+  - npm run -s test
 after_success:
 - >-
   test $TRAVIS_TAG &&

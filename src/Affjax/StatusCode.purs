@@ -1,4 +1,4 @@
-module Network.HTTP.StatusCode where
+module Affjax.StatusCode where
 
 import Prelude
 

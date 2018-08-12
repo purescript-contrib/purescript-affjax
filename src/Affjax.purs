@@ -1,4 +1,4 @@
-module Network.HTTP.Affjax
+module Affjax
   ( RequestOptions, defaultRequest
   , Response
   , URL
@@ -12,16 +12,22 @@ module Network.HTTP.Affjax
   , RetryPolicy(..)
   , defaultRetryPolicy
   , retry
+  , module Affjax.ResponseFormat
   ) where
 
 import Prelude
 
+import Affjax.RequestBody as RequestBody
+import Affjax.RequestHeader (RequestHeader(..), requestHeaderName, requestHeaderValue)
+import Affjax.ResponseFormat (ResponseFormatError(..), printResponseFormatError)
+import Affjax.ResponseFormat as ResponseFormat
+import Affjax.ResponseHeader (ResponseHeader, responseHeader)
+import Affjax.StatusCode (StatusCode(..))
 import Control.Monad.Except (runExcept, throwError)
 import Control.Parallel (parOneOf)
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Core as J
 import Data.Argonaut.Parser (jsonParser)
-import Data.Array (intercalate)
 import Data.Array as Arr
 import Data.Either (Either(..), either)
 import Data.Foldable (any)
@@ -31,6 +37,7 @@ import Data.Function.Uncurried (Fn2, runFn2)
 import Data.HTTP.Method (Method(..), CustomMethod)
 import Data.HTTP.Method as Method
 import Data.Int (toNumber)
+import Data.List.NonEmpty as NEL
 import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable, toNullable)
 import Data.Time.Duration (Milliseconds(..))
@@ -39,13 +46,8 @@ import Effect.Aff.Compat as AC
 import Effect.Class (liftEffect)
 import Effect.Exception (Error, error)
 import Effect.Ref as Ref
-import Foreign (F, Foreign, ForeignError(..), fail, renderForeignError, unsafeReadTagged, unsafeToForeign)
+import Foreign (F, Foreign, ForeignError(..), fail, unsafeReadTagged, unsafeToForeign)
 import Math as Math
-import Network.HTTP.Affjax.RequestBody as RequestBody
-import Network.HTTP.Affjax.ResponseFormat as ResponseFormat
-import Network.HTTP.RequestHeader (RequestHeader(..), requestHeaderName, requestHeaderValue)
-import Network.HTTP.ResponseHeader (ResponseHeader, responseHeader)
-import Network.HTTP.StatusCode (StatusCode(..))
 
 -- | A record that contains all the information to perform an HTTP request.
 -- | Instead of constructing the record from scratch it is often easier to build
@@ -87,77 +89,77 @@ type Response a =
   { status :: StatusCode
   , statusText :: String
   , headers :: Array ResponseHeader
-  , response :: a
+  , body :: a
   }
 
 -- | Type alias for URL strings to aid readability of types.
 type URL = String
 
 -- | Makes a `GET` request to the specified URL.
-get :: forall a. ResponseFormat.ResponseFormat a -> URL -> Aff (Response a)
+get :: forall a. ResponseFormat.ResponseFormat a -> URL -> Aff (Response (Either ResponseFormatError a))
 get rt u = request rt $ defaultRequest { url = u }
 
 -- | Makes a `POST` request to the specified URL, sending data.
-post :: forall a. ResponseFormat.ResponseFormat a -> URL -> RequestBody.RequestBody -> Aff (Response a)
+post :: forall a. ResponseFormat.ResponseFormat a -> URL -> RequestBody.RequestBody -> Aff (Response (Either ResponseFormatError a))
 post rt u c = request rt $ defaultRequest { method = Left POST, url = u, content = Just c }
 
 -- | Makes a `POST` request to the specified URL with the option to send data.
-post' :: forall a. ResponseFormat.ResponseFormat a -> URL -> Maybe RequestBody.RequestBody -> Aff (Response a)
+post' :: forall a. ResponseFormat.ResponseFormat a -> URL -> Maybe RequestBody.RequestBody -> Aff (Response (Either ResponseFormatError a))
 post' rt u c = request rt $ defaultRequest { method = Left POST, url = u, content = c }
 
 -- | Makes a `POST` request to the specified URL, sending data and ignoring the
 -- | response.
 post_ :: URL -> RequestBody.RequestBody -> Aff (Response Unit)
-post_ = post ResponseFormat.ignore
+post_ url = map (_ { body = unit }) <<< post ResponseFormat.ignore url
 
 -- | Makes a `POST` request to the specified URL with the option to send data,
 -- | and ignores the response.
 post_' :: URL -> Maybe RequestBody.RequestBody -> Aff (Response Unit)
-post_' = post' ResponseFormat.ignore
+post_' url = map (_ { body = unit }) <<< post' ResponseFormat.ignore url
 
 -- | Makes a `PUT` request to the specified URL, sending data.
-put :: forall a. ResponseFormat.ResponseFormat a -> URL -> RequestBody.RequestBody -> Aff (Response a)
+put :: forall a. ResponseFormat.ResponseFormat a -> URL -> RequestBody.RequestBody -> Aff (Response (Either ResponseFormatError a))
 put rt u c = request rt $ defaultRequest { method = Left PUT, url = u, content = Just c }
 
 -- | Makes a `PUT` request to the specified URL with the option to send data.
-put' :: forall a. ResponseFormat.ResponseFormat a -> URL -> Maybe RequestBody.RequestBody -> Aff (Response a)
+put' :: forall a. ResponseFormat.ResponseFormat a -> URL -> Maybe RequestBody.RequestBody -> Aff (Response (Either ResponseFormatError a))
 put' rt u c = request rt $ defaultRequest { method = Left PUT, url = u, content = c }
 
 -- | Makes a `PUT` request to the specified URL, sending data and ignoring the
 -- | response.
 put_ :: URL -> RequestBody.RequestBody -> Aff (Response Unit)
-put_ = put  ResponseFormat.ignore
+put_ url = map (_ { body = unit }) <<< put ResponseFormat.ignore url
 
 -- | Makes a `PUT` request to the specified URL with the option to send data,
 -- | and ignores the response.
 put_' :: URL -> Maybe RequestBody.RequestBody -> Aff (Response Unit)
-put_' = put'  ResponseFormat.ignore
+put_' url = map (_ { body = unit }) <<< put' ResponseFormat.ignore url
 
 -- | Makes a `DELETE` request to the specified URL.
-delete :: forall a. ResponseFormat.ResponseFormat a -> URL -> Aff (Response a)
+delete :: forall a. ResponseFormat.ResponseFormat a -> URL -> Aff (Response (Either ResponseFormatError a))
 delete rt u = request rt $ defaultRequest { method = Left DELETE, url = u }
 
 -- | Makes a `DELETE` request to the specified URL and ignores the response.
 delete_ :: URL -> Aff (Response Unit)
-delete_ = delete ResponseFormat.ignore
+delete_ = map (_ { body = unit }) <<< delete ResponseFormat.ignore
 
 -- | Makes a `PATCH` request to the specified URL, sending data.
-patch :: forall a. ResponseFormat.ResponseFormat a -> URL -> RequestBody.RequestBody -> Aff (Response a)
+patch :: forall a. ResponseFormat.ResponseFormat a -> URL -> RequestBody.RequestBody -> Aff (Response (Either ResponseFormatError a))
 patch rt u c = request rt $ defaultRequest { method = Left PATCH, url = u, content = Just c }
 
 -- | Makes a `PATCH` request to the specified URL with the option to send data.
-patch' :: forall a. ResponseFormat.ResponseFormat a -> URL -> Maybe RequestBody.RequestBody -> Aff (Response a)
+patch' :: forall a. ResponseFormat.ResponseFormat a -> URL -> Maybe RequestBody.RequestBody -> Aff (Response (Either ResponseFormatError a))
 patch' rt u c = request rt $ defaultRequest { method = Left PATCH, url = u, content = c }
 
 -- | Makes a `PATCH` request to the specified URL, sending data and ignoring the
 -- | response.
 patch_ :: URL -> RequestBody.RequestBody -> Aff (Response Unit)
-patch_ = patch ResponseFormat.ignore
+patch_ url = map (_ { body = unit }) <<< patch ResponseFormat.ignore url
 
 -- | Makes a `PATCH` request to the specified URL with the option to send data,
 -- | and ignores the response.
 patch_' :: URL -> Maybe RequestBody.RequestBody -> Aff (Response Unit)
-patch_' = patch' ResponseFormat.ignore
+patch_' url = map (_ { body = unit }) <<< patch' ResponseFormat.ignore url
 
 -- | A sequence of retry delays, in milliseconds.
 type RetryDelayCurve = Int -> Milliseconds
@@ -236,12 +238,14 @@ retry policy run req = do
 -- | ```purescript
 -- | get json "/resource"
 -- | ```
-request :: forall a. ResponseFormat.ResponseFormat a -> RequestOptions -> Aff (Response a)
+request :: forall a. ResponseFormat.ResponseFormat a -> RequestOptions -> Aff (Response (Either ResponseFormatError a))
 request rt req = do
   res <- AC.fromEffectFnAff $ runFn2 _ajax responseHeader req'
-  case runExcept (fromResponse' res.response) of
-    Left err -> throwError $ error $ intercalate "\n" (map renderForeignError err)
-    Right res' -> pure (res { response = res' })
+  case runExcept (fromResponse' res.body) of
+    Left err -> do
+      pure (res { body = Left (ResponseFormatError (NEL.head err) res.body) })
+    Right res' -> do
+      pure (res { body = Right res' })
   where
 
   req' :: AjaxRequest a

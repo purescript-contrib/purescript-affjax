@@ -68,7 +68,7 @@ exports._ajax = function () {
               var i = header.indexOf(":");
               return mkHeader(header.substring(0, i))(header.substring(i + 2));
             }),
-          response: platformSpecific.getResponse(xhr)
+          body: platformSpecific.getResponse(xhr)
         });
       };
       xhr.responseType = options.responseType;
