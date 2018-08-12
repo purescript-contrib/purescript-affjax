@@ -45,7 +45,7 @@ main = launchAff $ do
 
 (`defaultRequest` is a record value that has all the required fields pre-set for convenient overriding when making a request.)
 
-Or use of a number of helpers for common `get`, `post`, `put`, `delete`, and `patch` cases:
+There are also a number of helpers for common `get`, `post`, `put`, `delete`, and `patch` cases:
 
 ```purescript
 import Affjax.RequestBody as RequestBody
@@ -62,7 +62,15 @@ main = launchAff $ do
     Right json -> log $ "POST /api response: " <> J.stringify json
 ```
 
-See the module documentation for a full list of these helpers and their variations.
+See the [main module documentation](https://pursuit.purescript.org/packages/purescript-affjax/docs/Affjax) for a full list of these helpers and their variations.
+
+## Error handling
+
+There are two ways an Affjax request can fail: there's either some problem with the request itself, or the result that comes back is not as expected.
+
+For the first case, these errors will be things like the URL being invalid or the server not existing, and will occur in the `Aff` error channel. The [`try`](https://pursuit.purescript.org/packages/purescript-aff/docs/Effect.Aff#v:try) function can lift these errors out of the error channel so the result of a request becomes `Aff (Either Error (Response _))`.
+
+The latter case occurs when we did get a response for the request, but the result that came back could not be handled in the way that was expected. In these situations the `body` value of the `Response` will be a `Left` value with the error message describing what went wrong.
 
 ## Module documentation
 
