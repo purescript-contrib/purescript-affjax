@@ -37,7 +37,7 @@ import Effect.Aff (launchAff)
 import Effect.Class.Console (log)
 
 main = launchAff $ do
-  res <- AX.request ResponseFormat.json (AX.defaultRequest { url = "/api", method = Left GET })
+  res <- AX.request (AX.defaultRequest { url = "/api", method = Left GET, responseFormat = ResponseFormat.json })
   case res.body of
     Left err -> log $ "GET /api response failed to decode: " <> AX.printResponseFormatError err
     Right json -> log $ "GET /api response: " <> J.stringify json

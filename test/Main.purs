@@ -67,15 +67,15 @@ main = void $ runAff (either (\e -> logShow e *> throwException e) (const $ log 
     let notJson = prefix "/not-json"
 
     A.log "GET /does-not-exist: should be 404 Not found after retries"
-    (attempt $ AX.retry retryPolicy (AX.request ResponseFormat.ignore) $ AX.defaultRequest { url = doesNotExist }) >>= assertRight >>= \res -> do
+    (attempt $ AX.retry retryPolicy AX.request $ AX.defaultRequest { url = doesNotExist }) >>= assertRight >>= \res -> do
       assertEq notFound404 res.status
 
     A.log "GET /mirror: should be 200 OK"
-    (attempt $ AX.request ResponseFormat.ignore $ AX.defaultRequest { url = mirror }) >>= assertRight >>= \res -> do
+    (attempt $ AX.request $ AX.defaultRequest { url = mirror }) >>= assertRight >>= \res -> do
       assertEq ok200 res.status
 
     A.log "GET /does-not-exist: should be 404 Not found"
-    (attempt $ AX.request ResponseFormat.ignore $ AX.defaultRequest { url = doesNotExist }) >>= assertRight >>= \res -> do
+    (attempt $ AX.request $ AX.defaultRequest { url = doesNotExist }) >>= assertRight >>= \res -> do
       assertEq notFound404 res.status
 
     A.log "GET /not-json: invalid JSON with Foreign response should return an error"
