@@ -1,5 +1,5 @@
 module Affjax
-  ( RequestOptions, defaultRequest
+  ( Request, defaultRequest
   , Response
   , URL
   , request
@@ -52,7 +52,7 @@ import Math as Math
 -- | A record that contains all the information to perform an HTTP request.
 -- | Instead of constructing the record from scratch it is often easier to build
 -- | one based on `defaultRequest`.
-type RequestOptions =
+type Request =
   { method :: Either Method CustomMethod
   , url :: URL
   , headers :: Array RequestHeader
@@ -62,18 +62,18 @@ type RequestOptions =
   , withCredentials :: Boolean
   }
 
--- | A record of the type `RequestOptions` that has all fields set to default
+-- | A record of the type `Request` that has all fields set to default
 -- | values. This record can be used as the foundation for constructing
 -- | custom requests.
 -- |
--- | As an example
+-- | As an example:
 -- |
 -- | ```purescript
 -- | defaultRequest { url = "/api/user", method = Left POST }
 -- | ```
 -- |
--- | Represents a POST request to the URL `/api/user`.
-defaultRequest :: RequestOptions
+-- | Would represents a POST request to the URL `/api/user`.
+defaultRequest :: Request
 defaultRequest =
   { method: Left GET
   , url: "/"
@@ -183,7 +183,7 @@ defaultRetryPolicy =
 type RetryState e a = Either (Either e a) a
 
 -- | Retry a request using a `RetryPolicy`. After the timeout, the last received response is returned; if it was not possible to communicate with the server due to an error, then this is bubbled up.
-retry :: forall a. RetryPolicy -> (RequestOptions -> Aff (Response  a)) -> RequestOptions -> Aff (Response a)
+retry :: forall a. RetryPolicy -> (Request -> Aff (Response  a)) -> Request -> Aff (Response a)
 retry policy run req = do
   -- failureRef is either an exception or a failed request
   failureRef <- liftEffect $ Ref.new Nothing
@@ -238,7 +238,7 @@ retry policy run req = do
 -- | ```purescript
 -- | get json "/resource"
 -- | ```
-request :: forall a. ResponseFormat.ResponseFormat a -> RequestOptions -> Aff (Response (Either ResponseFormatError a))
+request :: forall a. ResponseFormat.ResponseFormat a -> Request -> Aff (Response (Either ResponseFormatError a))
 request rt req = do
   res <- AC.fromEffectFnAff $ runFn2 _ajax responseHeader req'
   case runExcept (fromResponse' res.body) of
