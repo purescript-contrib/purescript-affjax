@@ -224,14 +224,15 @@ retry policy run req = do
           go failureRef (n + 1)
         Right resp -> pure resp
 
--- | Makes an HTTP request. The first argument specifies how the HTTP response
--- | body should be interpreted.
+-- | Makes an HTTP request.
 -- |
--- | The example below performs a `GET` request to the URL `/resource`/ and
+-- | The example below performs a `GET` request to the URL `/resource` and
 -- | interprets the response body as JSON.
 -- |
 -- | ```purescript
--- | request json (defaultRequest { url = "/resource", method = Left GET })
+-- | import Affjax.ResponseFormat (json)
+-- | ...
+-- | request (defaultRequest { url = "/resource", method = Left GET, responseFormat = json})
 -- | ```
 -- |
 -- | For common cases helper functions can often be used instead of `request` .
