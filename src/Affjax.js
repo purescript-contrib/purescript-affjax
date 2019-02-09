@@ -53,9 +53,13 @@ exports._ajax = function () {
           errback(e);
         }
       }
-      xhr.onerror = function () {
-        errback(new Error("AJAX request failed: " + options.method + " " + options.url));
+      var onerror = function (msg) {
+        return function () {
+          errback(new Error(msg + ": " + options.method + " " + options.url));
+        };
       };
+      xhr.onerror = onerror("AJAX request failed");
+      xhr.ontimeout = onerror("AJAX request timed out");
       xhr.onload = function () {
         callback({
           status: xhr.status,
