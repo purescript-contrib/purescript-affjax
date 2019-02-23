@@ -4,8 +4,8 @@ import Prelude
 
 newtype StatusCode = StatusCode Int
 
-instance eqStatusCode :: Eq StatusCode where
-  eq (StatusCode x) (StatusCode y) = x == y
+derive instance eqStatusCode :: Eq StatusCode
+derive instance ordStatusCode :: Ord StatusCode
 
 instance showStatusCode :: Show StatusCode where
   show (StatusCode code) = "(StatusCode " <> show code <> ")"

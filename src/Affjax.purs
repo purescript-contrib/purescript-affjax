@@ -18,10 +18,11 @@ module Affjax
 import Prelude
 
 import Affjax.RequestBody as RequestBody
-import Affjax.RequestHeader (RequestHeader(..), requestHeaderName, requestHeaderValue)
+import Affjax.RequestHeader (RequestHeader(..))
+import Affjax.RequestHeader as RequestHeader
 import Affjax.ResponseFormat (ResponseFormatError(..), printResponseFormatError)
 import Affjax.ResponseFormat as ResponseFormat
-import Affjax.ResponseHeader (ResponseHeader, responseHeader)
+import Affjax.ResponseHeader (ResponseHeader(..))
 import Affjax.StatusCode (StatusCode(..))
 import Control.Monad.Except (runExcept, throwError)
 import Control.Parallel (parOneOf)
@@ -243,7 +244,7 @@ retry policy run req = do
 -- | ```
 request :: forall a. Request a -> Aff (Response (Either ResponseFormatError a))
 request req = do
-  res <- AC.fromEffectFnAff $ runFn2 _ajax responseHeader req'
+  res <- AC.fromEffectFnAff $ runFn2 _ajax ResponseHeader req'
   case runExcept (fromResponse' res.body) of
     Left err -> do
       pure (res { body = Left (ResponseFormatError (NEL.head err) res.body) })
@@ -255,7 +256,7 @@ request req = do
   req' =
     { method: Method.print req.method
     , url: req.url
-    , headers: (\h -> { field: requestHeaderName h, value: requestHeaderValue h }) <$> headers req.content
+    , headers: (\h -> { field: RequestHeader.name h, value: RequestHeader.value h }) <$> headers req.content
     , content: toNullable (extractContent <$> req.content)
     , responseType: ResponseFormat.toResponseType req.responseFormat
     , username: toNullable req.username
@@ -281,7 +282,7 @@ request req = do
 
   addHeader :: Maybe RequestHeader -> Array RequestHeader -> Array RequestHeader
   addHeader mh hs = case mh of
-    Just h | not $ any (on eq requestHeaderName h) hs -> hs `Arr.snoc` h
+    Just h | not $ any (on eq RequestHeader.name h) hs -> hs `Arr.snoc` h
     _ -> hs
 
   parseJSON :: String -> F Json

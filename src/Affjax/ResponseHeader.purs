@@ -1,25 +1,17 @@
-module Affjax.ResponseHeader
-  ( ResponseHeader()
-  , responseHeader
-  , responseHeaderName
-  , responseHeaderValue
-  ) where
+module Affjax.ResponseHeader where
 
 import Prelude
 
 data ResponseHeader = ResponseHeader String String
 
-responseHeader :: String -> String -> ResponseHeader
-responseHeader field value = ResponseHeader field value
-
-instance eqResponseHeader :: Eq ResponseHeader where
-  eq (ResponseHeader h1 v1) (ResponseHeader h2 v2) = h1 == h2 && v1 == v2
+derive instance eqResponseHeader :: Eq ResponseHeader
+derive instance ordResponseHeader :: Ord ResponseHeader
 
 instance showResponseHeader :: Show ResponseHeader where
   show (ResponseHeader h v) = "(ResponseHeader " <> show h <> " " <> show v <> ")"
 
-responseHeaderName :: ResponseHeader -> String
-responseHeaderName (ResponseHeader h _) = h
+name :: ResponseHeader -> String
+name (ResponseHeader h _) = h
 
-responseHeaderValue :: ResponseHeader -> String
-responseHeaderValue (ResponseHeader _ v) = v
+value :: ResponseHeader -> String
+value (ResponseHeader _ v) = v
