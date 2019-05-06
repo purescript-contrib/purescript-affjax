@@ -62,6 +62,9 @@ toMediaType =
 -- | with the value that decoding was attempted on.
 data ResponseFormatError = ResponseFormatError ForeignError Foreign
 
+instance responseFormatErrorShow :: Show ResponseFormatError where
+  show = printResponseFormatError
+
 printResponseFormatError :: ResponseFormatError → String
 printResponseFormatError (ResponseFormatError err _) =
   Foreign.renderForeignError err
