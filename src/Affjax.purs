@@ -30,6 +30,7 @@ import Data.Argonaut.Core (Json)
 import Data.Argonaut.Core as J
 import Data.Argonaut.Parser (jsonParser)
 import Data.Array as Arr
+import Data.ArrayBuffer.Types (ArrayView)
 import Data.Either (Either(..), either)
 import Data.Foldable (any)
 import Data.FormURLEncoded as FormURLEncoded
@@ -49,6 +50,9 @@ import Effect.Exception (Error, error)
 import Effect.Ref as Ref
 import Foreign (F, Foreign, ForeignError(..), fail, unsafeReadTagged, unsafeToForeign)
 import Math as Math
+import Web.DOM (Document)
+import Web.File.Blob (Blob)
+import Web.XHR.FormData (FormData)
 
 -- | A record that contains all the information to perform an HTTP request.
 -- | Instead of constructing the record from scratch it is often easier to build
@@ -266,13 +270,13 @@ request req = do
 
   extractContent :: RequestBody.RequestBody -> Foreign
   extractContent = case _ of
-    RequestBody.ArrayView f → f unsafeToForeign
-    RequestBody.Blob x → unsafeToForeign x
-    RequestBody.Document x → unsafeToForeign x
-    RequestBody.String x → unsafeToForeign x
-    RequestBody.FormData x → unsafeToForeign x
-    RequestBody.FormURLEncoded x → unsafeToForeign (FormURLEncoded.encode x)
-    RequestBody.Json x → unsafeToForeign (J.stringify x)
+    RequestBody.ArrayView f → f (unsafeToForeign :: forall a. ArrayView a -> Foreign)
+    RequestBody.Blob x → (unsafeToForeign :: Blob -> Foreign) x
+    RequestBody.Document x → (unsafeToForeign :: Document -> Foreign) x
+    RequestBody.String x → (unsafeToForeign :: String -> Foreign) x
+    RequestBody.FormData x → (unsafeToForeign :: FormData -> Foreign) x
+    RequestBody.FormURLEncoded x → (unsafeToForeign :: String -> Foreign) (FormURLEncoded.encode x)
+    RequestBody.Json x → (unsafeToForeign :: String -> Foreign) (J.stringify x)
 
   headers :: Maybe RequestBody.RequestBody -> Array RequestHeader
   headers reqContent =
