@@ -1,6 +1,4 @@
-/* global exports */
 /* global XMLHttpRequest */
-/* global module */
 /* global process */
 "use strict";
 
