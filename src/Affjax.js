@@ -13,12 +13,16 @@ exports._ajax = function () {
       return new XHR();
     };
 
-    platformSpecific.fixupUrl = function (url) {
-      var urllib = module.require("url");
-      var u = urllib.parse(url);
-      u.protocol = u.protocol || "http:";
-      u.hostname = u.hostname || "localhost";
-      return urllib.format(u);
+    platformSpecific.fixupUrl = function (url, xhr) {
+      if (xhr.nodejsBaseUrl === null) {
+        var urllib = module.require("url");
+        var u = urllib.parse(url);
+        u.protocol = u.protocol || "http:";
+        u.hostname = u.hostname || "localhost";
+        return urllib.format(u);
+      } else {
+        return url || "/";
+      }
     };
 
     platformSpecific.getResponse = function (xhr) {
@@ -42,7 +46,7 @@ exports._ajax = function () {
   return function (mkHeader, options) {
     return function (errback, callback) {
       var xhr = platformSpecific.newXHR();
-      var fixedUrl = platformSpecific.fixupUrl(options.url);
+      var fixedUrl = platformSpecific.fixupUrl(options.url, xhr);
       xhr.open(options.method || "GET", fixedUrl, true, options.username, options.password);
       if (options.headers) {
         try {
