@@ -23,7 +23,7 @@
     "package.json"
   ],
   "dependencies": {
-    "purescript-aff": "^5.0.0",
+    "purescript-aff": "git@github.com:eric-corumdigital/purescript-aff.git#general_errors",
     "purescript-argonaut-core": "^5.0.0",
     "purescript-arraybuffer-types": "^2.0.0",
     "purescript-web-xhr": "^3.0.0",
@@ -39,5 +39,8 @@
   },
   "devDependencies": {
     "purescript-console": "^4.1.0"
+  },
+  "resolutions": {
+    "purescript-aff": "general_errors"
   }
 }

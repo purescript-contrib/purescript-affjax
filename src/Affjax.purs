@@ -24,12 +24,14 @@ import Affjax.ResponseFormat (ResponseFormatError(..), printResponseFormatError)
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.ResponseHeader (ResponseHeader(..))
 import Affjax.StatusCode (StatusCode(..))
+import Control.Alt (class Alt)
 import Control.Monad.Except (runExcept, throwError)
-import Control.Parallel (parOneOf)
+import Control.Parallel (class Parallel, parallel, sequential)
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Core as J
 import Data.Argonaut.Parser (jsonParser)
 import Data.Array as Arr
+import Data.Array.NonEmpty (cons')
 import Data.ArrayBuffer.Types (ArrayView)
 import Data.Either (Either(..), either)
 import Data.Foldable (any)
@@ -39,12 +41,18 @@ import Data.Function.Uncurried (Fn2, runFn2)
 import Data.HTTP.Method (Method(..), CustomMethod)
 import Data.HTTP.Method as Method
 import Data.Int (toNumber)
+import Data.List.NonEmpty (foldMap1)
 import Data.List.NonEmpty as NEL
 import Data.Maybe (Maybe(..))
+import Data.Monoid.Alternate (Alternate(..))
+import Data.Newtype (unwrap)
 import Data.Nullable (Nullable, toNullable)
+import Data.Semigroup.First (First(..))
+import Data.Semigroup.Foldable (class Foldable1)
 import Data.Time.Duration (Milliseconds(..))
 import Effect.Aff (Aff, try, delay)
 import Effect.Aff.Compat as AC
+import Effect.Aff.General (unwrapL', wrapL)
 import Effect.Class (liftEffect)
 import Effect.Exception (Error, error)
 import Effect.Ref as Ref
@@ -189,6 +197,14 @@ defaultRetryPolicy =
 -- | Either we have a failure (which may be an exception or a failed response), or we have a successful response.
 type RetryState e a = Either (Either e a) a
 
+oneOfMap1 ∷ ∀ f g a b. Foldable1 f ⇒ Alt g ⇒ (a → g b) → f a → g b
+oneOfMap1 f = unwrap <<< foldMap1 (Alternate <<< f)
+
+parOneOf1 ∷ ∀ f m t a.
+  Parallel f m ⇒ Alt f ⇒ Foldable1 t ⇒ Functor t ⇒
+  t (m a) → m a
+parOneOf1 = sequential <<< oneOfMap1 parallel
+
 -- | Retry a request using a `RetryPolicy`. After the timeout, the last received response is returned; if it was not possible to communicate with the server due to an error, then this is bubbled up.
 retry :: forall a b. RetryPolicy -> (Request a -> Aff (Response b)) -> Request a -> Aff (Response b)
 retry policy run req = do
@@ -198,7 +214,8 @@ retry policy run req = do
   case policy.timeout of
     Nothing -> loop 1
     Just timeout -> do
-      result <- parOneOf [ Just <$> loop 1, Nothing <$ delay timeout ]
+      result <- unwrapL' First <<< parOneOf1 $ cons'
+        (Just <$> loop 1 # wrapL) [Nothing <$ delay timeout # wrapL]
       case result of
         Nothing -> do
           failure <- liftEffect $ Ref.read failureRef
