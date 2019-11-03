@@ -28,7 +28,7 @@
     "purescript-arraybuffer-types": "^2.0.0",
     "purescript-web-xhr": "^3.0.0",
     "purescript-foreign": "^5.0.0",
-    "purescript-form-urlencoded": "^4.0.0",
+    "purescript-form-urlencoded": "^5.0.0",
     "purescript-http-methods": "^4.0.0",
     "purescript-integers": "^4.0.0",
     "purescript-math": "^2.1.1",
