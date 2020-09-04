@@ -40,13 +40,13 @@ exports.startServer = function (errback, callback) {
   });
 
   app.get('/slow', function(req, res) {
-    const date = Date.now();
-    let currentDate = null;
+    var date = Date.now();
+    var currentDate = null;
     do {
       currentDate = Date.now();
     } while (currentDate - date < 2000);
     res.header({'content-type': 'text/plain'});
-    res.send('I hope I\'m not late!');
+    res.send('I hope I am not late!');
   });
 
   var server = app.listen(function () {
