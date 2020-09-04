@@ -79,6 +79,7 @@ exports._ajax = function () {
       };
       xhr.responseType = options.responseType;
       xhr.withCredentials = options.withCredentials;
+      xhr.timeout = options.timeout;
       xhr.send(options.content);
 
       return function (error, cancelErrback, cancelCallback) {

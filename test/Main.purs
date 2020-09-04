@@ -10,6 +10,7 @@ import Control.Monad.Error.Class (throwError)
 import Data.Argonaut.Core as J
 import Data.Either (Either(..), either)
 import Data.Maybe (Maybe(..))
+import Data.Time.Duration (Milliseconds(..))
 import Effect (Effect)
 import Effect.Aff (Aff, finally, forkAff, killFiber, runAff)
 import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
@@ -62,6 +63,7 @@ main = void $ runAff (either (\e -> logShow e *> throwException e) (const $ log 
     let mirror = prefix "/mirror"
     let doesNotExist = prefix "/does-not-exist"
     let notJson = prefix "/not-json"
+    let slow = prefix "/slow"
 
     A.log "GET /mirror: should be 200 OK"
     (AX.request $ AX.defaultRequest { url = mirror }) >>= assertRight >>= \res -> do
@@ -79,6 +81,11 @@ main = void $ runAff (either (\e -> logShow e *> throwException e) (const $ log 
     A.log "GET /not-json: invalid JSON with String response should be ok"
     AX.get ResponseFormat.string notJson >>= assertRight >>= \res -> do
       assertEq ok200 res.status
+
+    A.log "GET /slow with timeout: should return an error"
+    (AX.request $ AX.defaultRequest { url = slow, timeout = Just (Milliseconds 100.0) }) >>= assertLeft >>= case _ of
+      AX.XHRError _ → pure unit
+      other → logAny' other *> assertFail "Expected a XHRError"
 
     A.log "POST /mirror: should use the POST method"
     AX.post ResponseFormat.json mirror (Just (RequestBody.string "test")) >>= assertRight >>= \res -> do

@@ -34,8 +34,9 @@ import Data.Function.Uncurried (Fn2, runFn2)
 import Data.HTTP.Method (Method(..), CustomMethod)
 import Data.HTTP.Method as Method
 import Data.List.NonEmpty as NEL
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Nullable (Nullable, toNullable)
+import Data.Time.Duration (Milliseconds(..))
 import Effect.Aff (Aff, try)
 import Effect.Aff.Compat as AC
 import Effect.Exception as Exn
@@ -56,6 +57,7 @@ type Request a =
   , password :: Maybe String
   , withCredentials :: Boolean
   , responseFormat :: ResponseFormat.ResponseFormat a
+  , timeout :: Maybe Milliseconds
   }
 
 -- | A record of the type `Request` that has all fields set to default
@@ -79,6 +81,7 @@ defaultRequest =
   , password: Nothing
   , withCredentials: false
   , responseFormat: ResponseFormat.ignore
+  , timeout: Nothing
   }
 
 -- | The possible errors that can occur when making an Affjax request.
@@ -197,6 +200,7 @@ request req =
     , username: toNullable req.username
     , password: toNullable req.password
     , withCredentials: req.withCredentials
+    , timeout: fromMaybe 0.0 $ (\(Milliseconds x) -> x) <$> req.timeout
     }
 
   extractContent :: RequestBody.RequestBody -> Either String Foreign
@@ -251,6 +255,7 @@ type AjaxRequest a =
   , username :: Nullable String
   , password :: Nullable String
   , withCredentials :: Boolean
+  , timeout :: Number
   }
 
 foreign import _ajax
