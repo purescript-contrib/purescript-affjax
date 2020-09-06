@@ -39,6 +39,16 @@ exports.startServer = function (errback, callback) {
     });
   });
 
+  app.get('/slow', function(req, res) {
+    var date = Date.now();
+    var currentDate = null;
+    do {
+      currentDate = Date.now();
+    } while (currentDate - date < 2000);
+    res.header({'content-type': 'text/plain'});
+    res.send('I hope I am not late!');
+  });
+
   var server = app.listen(function () {
     callback({ port: server.address().port, server: server });
   });
