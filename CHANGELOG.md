@@ -14,11 +14,11 @@ Other improvements:
 
 ## [v11.0.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v11.0.0) - 2020-09-06
 
-* Adds support for the `timeout` option in `Request` (#151)
+- Adds support for the `timeout` option in `Request` (#151)
 
 ## [v10.1.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v10.1.0) - 2020-06-07
 
-Added `Newtype` instance for `StatusCode` (@ford-prefect)
+- Added `Newtype` instance for `StatusCode` (@ford-prefect)
 
 ## [v10.0.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v10.0.0) - 2019-11-03
 
@@ -34,7 +34,7 @@ Added `Newtype` instance for `StatusCode` (@ford-prefect)
 
 ## [v9.0.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v9.0.0) - 2019-03-11
 
-Update for latest `purescript-argonaut-core`
+- Update for latest `purescript-argonaut-core`
 
 ## [v8.0.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v8.0.0) - 2019-02-23
 
@@ -43,15 +43,15 @@ Update for latest `purescript-argonaut-core`
 
 ## [v7.0.2](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v7.0.2) - 2019-02-09
 
-XHR timeouts are now caught and raised through `Aff`'s error channel (@acple)
+- XHR timeouts are now caught and raised through `Aff`'s error channel (@acple)
 
 ## [v7.0.1](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v7.0.1) - 2019-01-31
 
-Fixed an incorrect `request` example in the doc comments (@jhrcek)
+- Fixed an incorrect `request` example in the doc comments (@jhrcek)
 
 ## [v7.0.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v7.0.0) - 2018-08-12
 
-Lots of things were renamed in this release to better match their current functionality.
+Lots of things were renamed in this release to better match their current functionality:
 
 - The `affjax` function is now `request`
 - The `AffjaxRequest` record is now `Request`
@@ -80,7 +80,7 @@ Thanks to @paldepind
 
 ## [v5.0.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v5.0.0) - 2017-09-14
 
-Updated for `purescript-aff` v4.0.0.
+- Updated for `purescript-aff` v4.0.0.
 
 ## [v4.0.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v4.0.0) - 2017-04-10
 
@@ -110,13 +110,9 @@ Updated for `purescript-aff` v4.0.0.
 
 - Added convenience functions for `PATCH` operations (@clayrat)
 
-## [v1.1.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v1.1.0) - 2016-06-27
-
-
-
 ## [v1.0.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v1.0.0) - 2016-06-18
 
-Updates for the 1.0 core libraries and PureScript 0.9.x.
+- Updates for the 1.0 core libraries and PureScript 0.9.x.
 
 ## [v0.13.2](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v0.13.2) - 2016-05-12
 
@@ -172,18 +168,6 @@ Updated dependencies
 
 - Updated dependencies and fixed warnings for PureScript 0.7.4
 
-## [v0.6.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v0.6.0) - 2015-08-16
-
-
-
-## [v0.5.3](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v0.5.3) - 2015-08-06
-
-
-
-## [v0.5.2](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v0.5.2) - 2015-08-06
-
-
-
 ## [v0.5.1](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v0.5.1) - 2015-08-05
 
 - Added support for node via npm package 'xmlhttprequest' (@hdgarrood)
@@ -206,13 +190,12 @@ Updated dependencies
 
 ## [v0.2.1](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v0.2.1) - 2015-04-23
 
-`ResponseType` constructors are now exported so that custom `Respondable` instances can be declared.
+- `ResponseType` constructors are now exported so that custom `Respondable` instances can be declared.
 
 ## [v0.2.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v0.2.0) - 2015-04-20
 
-Eliminates use of Proxy for a simpler implementation of Requestable.
+- Eliminates use of Proxy for a simpler implementation of Requestable.
 
 ## [v0.1.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v0.1.0) - 2015-04-20
 
-This is the first beta release of Affjax, a library designed to expose AJAX through Aff.
-
+- This is the first beta release of Affjax, a library designed to expose AJAX through Aff.
