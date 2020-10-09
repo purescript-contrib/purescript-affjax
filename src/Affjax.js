@@ -48,6 +48,7 @@ exports._ajax = function () {
       xhr.open(options.method || "GET", fixedUrl, true, options.username, options.password);
       if (options.headers) {
         try {
+          // eslint-disable-next-line no-eq-null,eqeqeq
           for (var i = 0, header; (header = options.headers[i]) != null; i++) {
             xhr.setRequestHeader(header.field, header.value);
           }
