@@ -1,3 +1,4 @@
+/* global XMLHttpRequest */
 /* global process */
 "use strict";
 
