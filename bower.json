@@ -23,21 +23,21 @@
     "package.json"
   ],
   "dependencies": {
-    "purescript-aff": "^5.0.0",
-    "purescript-argonaut-core": "^5.0.0",
-    "purescript-arraybuffer-types": "^2.0.0",
-    "purescript-web-xhr": "^3.0.0",
-    "purescript-foreign": "^5.0.0",
-    "purescript-form-urlencoded": "^5.0.0",
-    "purescript-http-methods": "^4.0.0",
-    "purescript-integers": "^4.0.0",
-    "purescript-math": "^2.1.1",
-    "purescript-media-types": "^4.0.0",
-    "purescript-nullable": "^4.0.0",
-    "purescript-refs": "^4.1.0",
-    "purescript-unsafe-coerce": "^4.0.0"
+    "purescript-aff": "main",
+    "purescript-argonaut-core": "main",
+    "purescript-arraybuffer-types": "main",
+    "purescript-web-xhr": "master",
+    "purescript-foreign": "master",
+    "purescript-form-urlencoded": "main",
+    "purescript-http-methods": "main",
+    "purescript-integers": "master",
+    "purescript-math": "master",
+    "purescript-media-types": "main",
+    "purescript-nullable": "main",
+    "purescript-refs": "master",
+    "purescript-unsafe-coerce": "master"
   },
   "devDependencies": {
-    "purescript-console": "^4.1.0"
+    "purescript-console": "master"
   }
 }
