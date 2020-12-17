@@ -11,6 +11,7 @@ New features:
 Bugfixes:
 
 Other improvements:
+  - Allows `XMLDocument` and `HTMLDocument` to be understood as `Document` responses ([#157](https://github.com/purescript-contrib/purescript-affjax/pull/157))
 
 ## [v11.0.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v11.0.0) - 2020-09-06
 
@@ -24,7 +25,7 @@ Other improvements:
 
 - Updated for latest `purescript-form-urlencoded`.
 - Some helper functions were combined to accept `Maybe RequestBody` rather than having two variations of each.
-- All request functions now return `Either Error _` - the `Aff` error channel is no longer used to capture errors from the `XHR` object, and the provided `Error` type captures the various possible error cases that can occur.
+- All request functions now return `Either Error _`; the `Aff` error channel is no longer used to capture errors from the `XHR` object, and the provided `Error` type captures the various possible error cases that can occur.
 - `retry` was removed.
 
 ## [v9.0.1](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v9.0.1) - 2019-09-05
