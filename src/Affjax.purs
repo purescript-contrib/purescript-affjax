@@ -20,6 +20,7 @@ import Affjax.RequestHeader as RequestHeader
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.ResponseHeader (ResponseHeader(..))
 import Affjax.StatusCode (StatusCode)
+import Control.Alt ((<|>))
 import Control.Monad.Except (runExcept)
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Core as J
@@ -256,7 +257,9 @@ request req =
   fromResponse = case req.responseFormat of
     ResponseFormat.ArrayBuffer _ -> unsafeReadTagged "ArrayBuffer"
     ResponseFormat.Blob _ -> unsafeReadTagged "Blob"
-    ResponseFormat.Document _ -> unsafeReadTagged "Document"
+    ResponseFormat.Document _ -> \x →     unsafeReadTagged "Document" x
+                                      <|> unsafeReadTagged "XMLDocument" x
+                                      <|> unsafeReadTagged "HTMLDocument" x
     ResponseFormat.Json coe -> coe <<< parseJSON <=< unsafeReadTagged "String"
     ResponseFormat.String _ -> unsafeReadTagged "String"
     ResponseFormat.Ignore coe -> const $ coe (pure unit)
