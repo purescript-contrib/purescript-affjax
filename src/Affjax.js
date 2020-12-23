@@ -41,7 +41,7 @@ exports._ajax = function () {
     };
   }
 
-  return function (mkHeader, options) {
+  return function (timeoutErrorMessageIdent, requestFailedMessageIdent, mkHeader, options) {
     return function (errback, callback) {
       var xhr = platformSpecific.newXHR();
       var fixedUrl = platformSpecific.fixupUrl(options.url, xhr);
@@ -56,13 +56,13 @@ exports._ajax = function () {
           errback(e);
         }
       }
-      var onerror = function (msg) {
+      var onerror = function (msgIdent) {
         return function () {
-          errback(new Error(msg + ": " + options.method + " " + options.url));
+          errback(new Error(msgIdent));
         };
       };
-      xhr.onerror = onerror("AJAX request failed");
-      xhr.ontimeout = onerror("AJAX request timed out");
+      xhr.onerror = onerror(requestFailedMessageIdent);
+      xhr.ontimeout = onerror(timeoutErrorMessageIdent);
       xhr.onload = function () {
         callback({
           status: xhr.status,

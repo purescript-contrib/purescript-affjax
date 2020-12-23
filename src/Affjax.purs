@@ -30,7 +30,7 @@ import Data.Either (Either(..), either, note)
 import Data.Foldable (any)
 import Data.FormURLEncoded as FormURLEncoded
 import Data.Function (on)
-import Data.Function.Uncurried (Fn2, runFn2)
+import Data.Function.Uncurried (Fn4, runFn4)
 import Data.HTTP.Method (Method(..), CustomMethod)
 import Data.HTTP.Method as Method
 import Data.List.NonEmpty as NEL
@@ -88,7 +88,9 @@ defaultRequest =
 data Error
   = RequestContentError String
   | ResponseBodyError ForeignError (Response Foreign)
-  | XHRError Exn.Error
+  | TimeoutError
+  | RequestFailedError
+  | XHROtherError Exn.Error
 
 printError :: Error -> String
 printError = case _ of
@@ -96,7 +98,11 @@ printError = case _ of
     "There was a problem with the request content: " <> err
   ResponseBodyError err _ ->
     "There was a problem with the response body: " <> renderForeignError err
-  XHRError err ->
+  TimeoutError ->
+    "There was a problem making the request: timeout"
+  RequestFailedError ->
+    "There was a problem making the request: request failed"
+  XHROtherError err ->
     "There was a problem making the request: " <> Exn.message err
 
 -- | The type of records that represents a received HTTP response.
@@ -179,16 +185,19 @@ request req =
         Left err ->
           pure $ Left (RequestContentError err)
   where
-
   send :: Nullable Foreign -> Aff (Either Error (Response a))
   send content =
-    try (AC.fromEffectFnAff (runFn2 _ajax ResponseHeader (ajaxRequest content))) <#> case _ of
+    try (AC.fromEffectFnAff (runFn4 _ajax timeoutErrorMessageIdent requestFailedMessageIdent ResponseHeader (ajaxRequest content))) <#> case _ of
       Right res ->
         case runExcept (fromResponse res.body) of
           Left err -> Left (ResponseBodyError (NEL.head err) res)
           Right body -> Right (res { body = body })
       Left err ->
-        Left (XHRError err)
+        let message = Exn.message err
+          in Left $
+          if message == timeoutErrorMessageIdent then TimeoutError
+          else if message == requestFailedMessageIdent then RequestFailedError
+          else XHROtherError err
 
   ajaxRequest :: Nullable Foreign -> AjaxRequest a
   ajaxRequest =
@@ -227,6 +236,12 @@ request req =
       addHeader (Accept <$> ResponseFormat.toMediaType req.responseFormat)
         req.headers
 
+  timeoutErrorMessageIdent :: String
+  timeoutErrorMessageIdent = "AffjaxTimeoutErrorMessageIdent"
+
+  requestFailedMessageIdent :: String
+  requestFailedMessageIdent = "AffjaxRequestFailedMessageIdent"
+
   addHeader :: Maybe RequestHeader -> Array RequestHeader -> Array RequestHeader
   addHeader mh hs = case mh of
     Just h | not $ any (on eq RequestHeader.name h) hs -> hs `Arr.snoc` h
@@ -261,7 +276,9 @@ type AjaxRequest a =
 
 foreign import _ajax
   :: forall a
-   . Fn2
+   . Fn4
+      String
+      String
       (String -> String -> ResponseHeader)
       (AjaxRequest a)
       (AC.EffectFnAff (Response Foreign))

@@ -6,6 +6,8 @@ Notable changes to this project are documented in this file. The format is based
 
 Breaking changes (😱!!!):
 
+- `XHRError Exn.Error` was removed and split to `TimeoutError`, `RequestFailedError`, `XHROtherError Exn.Error` (#155, @srghma)
+
 New features:
 
 Bugfixes:
