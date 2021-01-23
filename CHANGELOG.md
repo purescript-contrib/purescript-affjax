@@ -5,19 +5,21 @@ Notable changes to this project are documented in this file. The format is based
 ## [Unreleased]
 
 Breaking changes (😱!!!):
-
-- `XHRError Exn.Error` was removed and split to `TimeoutError`, `RequestFailedError`, `XHROtherError Exn.Error` (#155, @srghma)
+- Added support for PureScript 0.14 and dropped support for all previous versions (#158)
+- `XHRError Exn.Error` was removed and split to `TimeoutError`, `RequestFailedError`, and `XHROtherError Exn.Error` (#155, @srghma)
 
 New features:
 
 Bugfixes:
 
 Other improvements:
-  - Allows `XMLDocument` and `HTMLDocument` to be understood as `Document` responses ([#157](https://github.com/purescript-contrib/purescript-affjax/pull/157))
+- `XMLDocument` and `HTMLDocument` are now understood as `Document` responses (#157)
+- Changed default branch to `main` from `master`
+- Updated to comply with Contributors library guidelines by adding new issue and pull request templates, updating documentation, and migrating to Spago for local development and CI (#153)
 
 ## [v11.0.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v11.0.0) - 2020-09-06
 
-- Adds support for the `timeout` option in `Request` (#151)
+- Added support for the `timeout` option in `Request` (#151)
 
 ## [v10.1.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v10.1.0) - 2020-06-07
 
@@ -32,12 +34,12 @@ Other improvements:
 
 ## [v9.0.1](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v9.0.1) - 2019-09-05
 
-- Ensure version mismatch with `purescript-form-urlencoded` does not compile, potentially resulting in runtime errors (spotted by @menelaos)
+- Ensured version mismatch with `purescript-form-urlencoded` does not compile, potentially resulting in runtime errors (spotted by @menelaos)
 - Don't override `nodejsBaseUrl` already set in `xhr2` on node (@paul-rouse)
 
 ## [v9.0.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v9.0.0) - 2019-03-11
 
-- Update for latest `purescript-argonaut-core`
+- Updated for latest `purescript-argonaut-core`
 
 ## [v8.0.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v8.0.0) - 2019-02-23
 
@@ -70,9 +72,7 @@ Additionally, errors that occur during decoding a response no longer cause an en
 
 ## [v6.0.1](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v6.0.1) - 2018-08-05
 
-**Documentation improvements**
-
-Thanks to @paldepind
+- Improved documentation (@paldepind)
 
 ## [v6.0.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v6.0.0) - 2018-05-27
 
@@ -115,11 +115,11 @@ Thanks to @paldepind
 
 ## [v1.0.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v1.0.0) - 2016-06-18
 
-- Updates for the 1.0 core libraries and PureScript 0.9.x.
+- Updated for the 1.0 core libraries and PureScript 0.9.x.
 
 ## [v0.13.2](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v0.13.2) - 2016-05-12
 
-- Update for Pursuit publishing
+- Updated for Pursuit publishing
 
 ## [v0.13.1](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v0.13.1) - 2016-04-10
 
@@ -165,7 +165,7 @@ Thanks to @paldepind
 
 ## [v0.8.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v0.8.0) - 2015-09-23
 
-Updated dependencies
+- Updated dependencies
 
 ## [v0.7.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v0.7.0) - 2015-08-31
 
