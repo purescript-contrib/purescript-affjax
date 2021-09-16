@@ -110,5 +110,5 @@ main = void $ runAff (either (\e -> logShow e *> Exn.throwException e) (const $ 
 
     A.log "Testing invalid url"
     AX.get ResponseFormat.string "/фыва" >>= assertLeft >>= case _ of
-       AX.XHROtherError error → assertEq "Request path contains unescaped characters" (Exn.message error)
-       other → logAny' other *> assertFail "Expected a XHROtherError"
+       AX.BadUrlError url → assertEq "/фыва" url
+       other → logAny' other *> assertFail "Expected a BadUrlError"

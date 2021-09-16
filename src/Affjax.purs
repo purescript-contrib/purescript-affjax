@@ -91,6 +91,7 @@ data Error
   | ResponseBodyError ForeignError (Response Foreign)
   | TimeoutError
   | RequestFailedError
+  | BadUrlError String
   | XHROtherError Exn.Error
 
 printError :: Error -> String
@@ -103,6 +104,8 @@ printError = case _ of
     "There was a problem making the request: timeout"
   RequestFailedError ->
     "There was a problem making the request: request failed"
+  BadUrlError url ->
+    "There was a problem with the url: " <> url
   XHROtherError err ->
     "There was a problem making the request: " <> Exn.message err
 
@@ -198,6 +201,7 @@ request req =
           in Left $
           if message == timeoutErrorMessageIdent then TimeoutError
           else if message == requestFailedMessageIdent then RequestFailedError
+          else if message == "Request path contains unescaped characters" then BadUrlError req.url
           else XHROtherError err
 
   ajaxRequest :: Nullable Foreign -> AjaxRequest a
