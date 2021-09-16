@@ -17,7 +17,7 @@ import Effect.Aff.Compat (EffectFnAff, fromEffectFnAff)
 import Effect.Class (liftEffect)
 import Effect.Class.Console as A
 import Effect.Console (log, logShow)
-import Effect.Exception (error, throwException)
+import Effect.Exception as Exn
 import Foreign.Object as FO
 
 foreign import logAny :: forall a. a -> Effect Unit
@@ -30,7 +30,7 @@ logAny' :: forall a. a -> Aff Unit
 logAny' = liftEffect <<< logAny
 
 assertFail :: forall a. String -> Aff a
-assertFail = throwError <<< error
+assertFail = throwError <<< Exn.error
 
 assertMsg :: String -> Boolean -> Aff Unit
 assertMsg _ true = pure unit
@@ -51,7 +51,7 @@ assertEq x y =
   when (x /= y) $ assertFail $ "Expected " <> show x <> ", got " <> show y
 
 main :: Effect Unit
-main = void $ runAff (either (\e -> logShow e *> throwException e) (const $ log "affjax: All good!")) do
+main = void $ runAff (either (\e -> logShow e *> Exn.throwException e) (const $ log "affjax: All good!")) do
   let ok200 = StatusCode 200
   let notFound404 = StatusCode 404
 
@@ -105,5 +105,10 @@ main = void $ runAff (either (\e -> logShow e *> throwException e) (const $ log 
       -- assertEq (Just "test=test") (lookupHeader "Set-Cookie" res.headers)
 
     A.log "Testing cancellation"
-    forkAff (AX.post_ mirror (Just (RequestBody.string "do it now"))) >>= killFiber (error "Pull the cord!")
+    forkAff (AX.post_ mirror (Just (RequestBody.string "do it now"))) >>= killFiber (Exn.error "Pull the cord!")
     assertMsg "Should have been canceled" true
+
+    A.log "Testing invalid url"
+    AX.get ResponseFormat.string "/фыва" >>= assertLeft >>= case _ of
+       AX.BadUrlError url → assertEq "/фыва" url
+       other → logAny' other *> assertFail "Expected a BadUrlError"
