@@ -11,6 +11,7 @@ New features:
 Bugfixes:
 
 Other improvements:
+- Added `purs-tidy` formatter (#167 by @thomashoneyman)
 
 ## [v12.0.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v12.0.0) - 2021-02-26
 
