@@ -1,15 +1,20 @@
 module Affjax
-  ( Request, defaultRequest
+  ( Request
+  , defaultRequest
   , Response
   , Error(..)
   , printError
   , URL
   , request
   , get
-  , post, post_
-  , put, put_
-  , delete, delete_
-  , patch, patch_
+  , post
+  , post_
+  , put
+  , put_
+  , delete
+  , delete_
+  , patch
+  , patch_
   ) where
 
 import Prelude
@@ -193,12 +198,14 @@ request req =
         case runExcept (fromResponse res.body) of
           Left err -> Left (ResponseBodyError (NEL.head err) res)
           Right body -> Right (res { body = body })
-      Left err ->
+      Left err -> Left do
         let message = Exn.message err
-          in Left $
-          if message == timeoutErrorMessageIdent then TimeoutError
-          else if message == requestFailedMessageIdent then RequestFailedError
-          else XHROtherError err
+        if message == timeoutErrorMessageIdent then
+          TimeoutError
+        else if message == requestFailedMessageIdent then
+          RequestFailedError
+        else
+          XHROtherError err
 
   ajaxRequest :: Nullable Foreign -> AjaxRequest a
   ajaxRequest =
@@ -233,9 +240,8 @@ request req =
 
   headers :: Maybe RequestBody.RequestBody -> Array RequestHeader
   headers reqContent =
-    addHeader (ContentType <$> (RequestBody.toMediaType =<< reqContent)) $
-      addHeader (Accept <$> ResponseFormat.toMediaType req.responseFormat)
-        req.headers
+    addHeader (ContentType <$> (RequestBody.toMediaType =<< reqContent))
+      $ addHeader (Accept <$> ResponseFormat.toMediaType req.responseFormat) req.headers
 
   timeoutErrorMessageIdent :: String
   timeoutErrorMessageIdent = "AffjaxTimeoutErrorMessageIdent"
@@ -257,9 +263,10 @@ request req =
   fromResponse = case req.responseFormat of
     ResponseFormat.ArrayBuffer _ -> unsafeReadTagged "ArrayBuffer"
     ResponseFormat.Blob _ -> unsafeReadTagged "Blob"
-    ResponseFormat.Document _ -> \x →     unsafeReadTagged "Document" x
-                                      <|> unsafeReadTagged "XMLDocument" x
-                                      <|> unsafeReadTagged "HTMLDocument" x
+    ResponseFormat.Document _ -> \x ->
+      unsafeReadTagged "Document" x
+        <|> unsafeReadTagged "XMLDocument" x
+        <|> unsafeReadTagged "HTMLDocument" x
     ResponseFormat.Json coe -> coe <<< parseJSON <=< unsafeReadTagged "String"
     ResponseFormat.String _ -> unsafeReadTagged "String"
     ResponseFormat.Ignore coe -> const $ coe (pure unit)
@@ -280,8 +287,8 @@ type AjaxRequest a =
 foreign import _ajax
   :: forall a
    . Fn4
-      String
-      String
-      (String -> String -> ResponseHeader)
-      (AjaxRequest a)
-      (AC.EffectFnAff (Response Foreign))
+       String
+       String
+       (String -> String -> ResponseHeader)
+       (AjaxRequest a)
+       (AC.EffectFnAff (Response Foreign))

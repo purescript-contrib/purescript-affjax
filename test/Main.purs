@@ -55,7 +55,7 @@ main = void $ runAff (either (\e -> logShow e *> throwException e) (const $ log 
   let ok200 = StatusCode 200
   let notFound404 = StatusCode 404
 
-  { server, port } ← fromEffectFnAff startServer
+  { server, port } <- fromEffectFnAff startServer
   finally (fromEffectFnAff (stopServer server)) do
     A.log ("Test server running on port " <> show port)
 
@@ -75,8 +75,8 @@ main = void $ runAff (either (\e -> logShow e *> throwException e) (const $ log 
 
     A.log "GET /not-json: invalid JSON with Foreign response should return an error"
     AX.get ResponseFormat.json doesNotExist >>= assertLeft >>= case _ of
-      AX.ResponseBodyError _ _ → pure unit
-      other → logAny' other *> assertFail "Expected a ResponseBodyError"
+      AX.ResponseBodyError _ _ -> pure unit
+      other -> logAny' other *> assertFail "Expected a ResponseBodyError"
 
     A.log "GET /not-json: invalid JSON with String response should be ok"
     AX.get ResponseFormat.string notJson >>= assertRight >>= \res -> do
@@ -84,8 +84,8 @@ main = void $ runAff (either (\e -> logShow e *> throwException e) (const $ log 
 
     A.log "GET /slow with timeout: should return an error"
     (AX.request $ AX.defaultRequest { url = slow, timeout = Just (Milliseconds 100.0) }) >>= assertLeft >>= case _ of
-      AX.TimeoutError → pure unit
-      other → logAny' other *> assertFail "Expected a TimeoutError"
+      AX.TimeoutError -> pure unit
+      other -> logAny' other *> assertFail "Expected a TimeoutError"
 
     A.log "POST /mirror: should use the POST method"
     AX.post ResponseFormat.json mirror (Just (RequestBody.string "test")) >>= assertRight >>= \res -> do
@@ -102,7 +102,6 @@ main = void $ runAff (either (\e -> logShow e *> throwException e) (const $ log 
     A.log "Testing CORS, HTTPS"
     AX.get ResponseFormat.json "https://cors-test.appspot.com/test" >>= assertRight >>= \res -> do
       assertEq ok200 res.status
-      -- assertEq (Just "test=test") (lookupHeader "Set-Cookie" res.headers)
 
     A.log "Testing cancellation"
     forkAff (AX.post_ mirror (Just (RequestBody.string "do it now"))) >>= killFiber (error "Pull the cord!")
