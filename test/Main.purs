@@ -102,7 +102,6 @@ main = void $ runAff (either (\e -> logShow e *> throwException e) (const $ log 
     A.log "Testing CORS, HTTPS"
     AX.get ResponseFormat.json "https://cors-test.appspot.com/test" >>= assertRight >>= \res -> do
       assertEq ok200 res.status
-    -- assertEq (Just "test=test") (lookupHeader "Set-Cookie" res.headers)
 
     A.log "Testing cancellation"
     forkAff (AX.post_ mirror (Just (RequestBody.string "do it now"))) >>= killFiber (error "Pull the cord!")
