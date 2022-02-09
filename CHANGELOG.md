@@ -9,6 +9,7 @@ Breaking changes:
 New features:
 
 Bugfixes:
+- Change the nodejs detection method to be compatible with parceljs (#161)
 
 Other improvements:
 - Added `purs-tidy` formatter (#167 by @thomashoneyman)
