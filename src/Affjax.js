@@ -2,7 +2,7 @@
 /* global process */
 "use strict";
 
-exports._ajax = function () {
+export var _ajax = function () {
   var platformSpecific = { };
   if (typeof module !== "undefined" && module.require && !(typeof process !== "undefined" && process.versions["electron"])) {
     // We are on node.js
