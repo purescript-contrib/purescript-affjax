@@ -1,5 +1,7 @@
 "use strict";
 
+import express from "express";
+import bodyParser from "body-parser";
 
 export function logAny(a) {
   return function () {
@@ -9,9 +11,7 @@ export function logAny(a) {
 }
 
 export function startServer(errback, callback) {
-  var express = require('express');
   var app = express();
-  var bodyParser = require('body-parser');
 
   // Always make req.body available as a String
   app.use(bodyParser.text(function() { return true; }));
