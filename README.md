@@ -4,7 +4,6 @@
 [![Release](https://img.shields.io/github/release/purescript-contrib/purescript-affjax.svg)](https://github.com/purescript-contrib/purescript-affjax/releases)
 [![Pursuit](https://pursuit.purescript.org/packages/purescript-affjax/badge)](https://pursuit.purescript.org/packages/purescript-affjax)
 [![Maintainer: garyb](https://img.shields.io/badge/maintainer-garyb-teal.svg)](https://github.com/garyb)
-[![Maintainer: thomashoneyman](https://img.shields.io/badge/maintainer-thomashoneyman-teal.svg)](https://github.com/thomashoneyman)
 
 A library taking advantage of [`aff`](https://github.com/purescript-contrib/purescript-aff) to enable pain-free asynchronous AJAX requests and response handling.
 
