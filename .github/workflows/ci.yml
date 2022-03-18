@@ -57,6 +57,5 @@ jobs:
 
       - name: Verify Bower & Pulp
         run: |
-          npm install bower pulp
-          npx bower install
-          npx pulp build
+          npx bower@latest install
+          npx pulp@15.0.0 build
