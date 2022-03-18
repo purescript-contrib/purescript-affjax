@@ -54,3 +54,9 @@ jobs:
 
       - name: Check formatting
         run: purs-tidy check src test
+
+      - name: Verify Bower & Pulp
+        run: |
+          npm install bower pulp
+          npx bower install
+          npx pulp build
