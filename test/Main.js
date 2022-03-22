@@ -1,13 +1,13 @@
 "use strict";
 
-exports.logAny = function (a) {
+export function logAny(a) {
   return function () {
     console.log(a);
     return {};
   };
-};
+}
 
-exports.startServer = function (errback, callback) {
+export function startServer(errback, callback) {
   var express = require('express');
   var app = express();
   var bodyParser = require('body-parser');
@@ -59,9 +59,9 @@ exports.startServer = function (errback, callback) {
   return function (cancelError, onCancelerError, onCancelerSuccess) {
     onCancelerSuccess();
   };
-};
+}
 
-exports.stopServer = function (server) {
+export function stopServer(server) {
   return function (errback, callback) {
     server.close(function (err) {
       if (err) errback(err);
@@ -71,4 +71,4 @@ exports.stopServer = function (server) {
       onCancelerSuccess();
     };
   };
-};
+}
