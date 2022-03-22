@@ -22,7 +22,6 @@
   , "newtype"
   , "nullable"
   , "prelude"
-  , "psci-support"
   , "transformers"
   , "web-dom"
   , "web-file"
