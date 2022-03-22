@@ -1,5 +1,3 @@
-"use strict";
-
 export function logAny(a) {
   return function () {
     console.log(a);

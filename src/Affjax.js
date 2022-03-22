@@ -1,7 +1,5 @@
 /* global XMLHttpRequest */
 /* global process */
-"use strict";
-
 export const _ajax = function () {
   var platformSpecific = { };
   if (typeof module !== "undefined" && module.require && !(typeof process !== "undefined" && process.versions["electron"])) {
