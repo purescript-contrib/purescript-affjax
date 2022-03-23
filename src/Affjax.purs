@@ -223,7 +223,7 @@ request req =
   extractContent :: RequestBody.RequestBody -> Either String Foreign
   extractContent = case _ of
     RequestBody.ArrayView f ->
-      Right $ f (unsafeToForeign :: forall a. ArrayView a -> Foreign)
+      Right $ f (unsafeToForeign :: forall b. ArrayView b -> Foreign)
     RequestBody.Blob x ->
       Right $ (unsafeToForeign :: Blob -> Foreign) x
     RequestBody.Document x ->
