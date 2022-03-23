@@ -45,10 +45,12 @@
     "purescript-newtype": "master",
     "purescript-nullable": "main",
     "purescript-prelude": "master",
-    "purescript-psci-support": "master",
     "purescript-transformers": "master",
     "purescript-web-dom": "master",
     "purescript-web-file": "master",
     "purescript-web-xhr": "master"
+  },
+  "devDependencies": {
+    "purescript-psci-support": "master"
   }
 }
