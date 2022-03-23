@@ -1,6 +1,6 @@
 /* global XMLHttpRequest */
 /* global process */
-export const _ajax = function () {
+export function _ajax() {
   var platformSpecific = { };
   if (typeof module !== "undefined" && module.require && !(typeof process !== "undefined" && process.versions["electron"])) {
     // We are on node.js
