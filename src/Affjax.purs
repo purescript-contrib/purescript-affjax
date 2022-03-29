@@ -15,6 +15,8 @@ module Affjax
   , delete_
   , patch
   , patch_
+  , Xhr
+  , AffjaxDriver
   ) where
 
 import Prelude
