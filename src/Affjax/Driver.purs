@@ -32,7 +32,7 @@ import Data.Either (Either(..), either, note)
 import Data.Foldable (any)
 import Data.FormURLEncoded as FormURLEncoded
 import Data.Function (on)
-import Data.Function.Uncurried (Fn2, Fn5, runFn5)
+import Data.Function.Uncurried (Fn5, runFn5)
 import Data.HTTP.Method (Method(..))
 import Data.HTTP.Method as Method
 import Data.List.NonEmpty as NEL
