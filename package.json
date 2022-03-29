@@ -1,8 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "build": "eslint src && spago build --purs-args '--censor-lib --strict'",
-    "test": "spago test --no-install"
+    "build": "eslint src && spago build --purs-args '--censor-lib --strict'"
   },
   "devDependencies": {
     "body-parser": "^1.19.0",
