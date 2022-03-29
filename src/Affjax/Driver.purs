@@ -10,6 +10,7 @@ module Affjax.Driver
   , patch
   , patch_
   , Xhr
+  , AffjaxDriver
   ) where
 
 import Prelude
