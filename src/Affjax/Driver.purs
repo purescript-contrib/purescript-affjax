@@ -196,7 +196,6 @@ request driver req =
     ResponseFormat.String _ -> unsafeReadTagged "String"
     ResponseFormat.Ignore coe -> const $ coe (pure unit)
 
-
 type AjaxRequest :: Type -> Type
 type AjaxRequest a =
   { method :: String
