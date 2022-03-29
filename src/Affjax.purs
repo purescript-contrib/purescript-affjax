@@ -179,8 +179,8 @@ patch_ url = map void <<< patch ResponseFormat.ignore url
 -- | ```purescript
 -- | get json "/resource"
 -- | ```
-request :: forall a. Request a -> Aff (Either Error (Response a))
-request req =
+request :: forall a. AffjaxDriver -> Request a -> Aff (Either Error (Response a))
+request driver req =
   case req.content of
     Nothing ->
       send (toNullable Nothing)
@@ -193,7 +193,7 @@ request req =
   where
   send :: Nullable Foreign -> Aff (Either Error (Response a))
   send content =
-    try (AC.fromEffectFnAff (runFn4 _ajax timeoutErrorMessageIdent requestFailedMessageIdent ResponseHeader (ajaxRequest content))) <#> case _ of
+    try (AC.fromEffectFnAff (runFn5 _ajax driver timeoutErrorMessageIdent requestFailedMessageIdent ResponseHeader (ajaxRequest content))) <#> case _ of
       Right res ->
         case runExcept (fromResponse res.body) of
           Left err -> Left (ResponseBodyError (NEL.head err) res)
@@ -284,9 +284,17 @@ type AjaxRequest a =
   , timeout :: Number
   }
 
+foreign import data Xhr :: Type
+
+type AffjaxDriver =
+  { newXHR :: Xhr
+  , fixupUrl :: Fn2 Xhr String String
+  }
+
 foreign import _ajax
   :: forall a
-   . Fn4
+   . Fn5
+       AffjaxDriver
        String
        String
        (String -> String -> ResponseHeader)
