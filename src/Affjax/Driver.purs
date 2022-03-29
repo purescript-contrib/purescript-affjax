@@ -212,10 +212,13 @@ type AjaxRequest a =
 
 foreign import data Xhr :: Type
 
-type AffjaxDriver =
-  { newXHR :: Xhr
-  , fixupUrl :: Fn2 Xhr String String
-  }
+-- Drivers should have the following 'shape':
+-- ```
+-- { newXHR :: Effect Xhr
+-- , fixupUrl :: Fn2 Xhr String String
+-- }
+-- ```
+foreign import data AffjaxDriver :: Type
 
 foreign import _ajax
   :: forall a
