@@ -125,44 +125,44 @@ type Response a =
 type URL = String
 
 -- | Makes a `GET` request to the specified URL.
-get :: forall a. ResponseFormat.ResponseFormat a -> URL -> Aff (Either Error (Response a))
-get rf u = request (defaultRequest { url = u, responseFormat = rf })
+get :: forall a. AffjaxDriver -> ResponseFormat.ResponseFormat a -> URL -> Aff (Either Error (Response a))
+get driver rf u = request driver (defaultRequest { url = u, responseFormat = rf })
 
 -- | Makes a `POST` request to the specified URL with the option to send data.
-post :: forall a. ResponseFormat.ResponseFormat a -> URL -> Maybe RequestBody.RequestBody -> Aff (Either Error (Response a))
-post rf u c = request (defaultRequest { method = Left POST, url = u, content = c, responseFormat = rf })
+post :: forall a. AffjaxDriver -> ResponseFormat.ResponseFormat a -> URL -> Maybe RequestBody.RequestBody -> Aff (Either Error (Response a))
+post driver rf u c = request driver (defaultRequest { method = Left POST, url = u, content = c, responseFormat = rf })
 
 -- | Makes a `POST` request to the specified URL with the option to send data
 -- | and ignores the response body.
-post_ :: URL -> Maybe RequestBody.RequestBody -> Aff (Either Error Unit)
-post_ url = map void <<< post ResponseFormat.ignore url
+post_ :: AffjaxDriver -> URL -> Maybe RequestBody.RequestBody -> Aff (Either Error Unit)
+post_ driver url = map void <<< post driver ResponseFormat.ignore url
 
 -- | Makes a `PUT` request to the specified URL with the option to send data.
-put :: forall a. ResponseFormat.ResponseFormat a -> URL -> Maybe RequestBody.RequestBody -> Aff (Either Error (Response a))
-put rf u c = request (defaultRequest { method = Left PUT, url = u, content = c, responseFormat = rf })
+put :: forall a. AffjaxDriver -> ResponseFormat.ResponseFormat a -> URL -> Maybe RequestBody.RequestBody -> Aff (Either Error (Response a))
+put driver rf u c = request driver (defaultRequest { method = Left PUT, url = u, content = c, responseFormat = rf })
 
 -- | Makes a `PUT` request to the specified URL with the option to send data
 -- | and ignores the response body.
-put_ :: URL -> Maybe RequestBody.RequestBody -> Aff (Either Error Unit)
-put_ url = map void <<< put ResponseFormat.ignore url
+put_ :: AffjaxDriver -> URL -> Maybe RequestBody.RequestBody -> Aff (Either Error Unit)
+put_ driver url = map void <<< put driver ResponseFormat.ignore url
 
 -- | Makes a `DELETE` request to the specified URL.
-delete :: forall a. ResponseFormat.ResponseFormat a -> URL -> Aff (Either Error (Response a))
-delete rf u = request (defaultRequest { method = Left DELETE, url = u, responseFormat = rf })
+delete :: forall a. AffjaxDriver -> ResponseFormat.ResponseFormat a -> URL -> Aff (Either Error (Response a))
+delete driver rf u = request driver (defaultRequest { method = Left DELETE, url = u, responseFormat = rf })
 
 -- | Makes a `DELETE` request to the specified URL and ignores the response
 -- | body.
-delete_ :: URL -> Aff (Either Error Unit)
-delete_ = map void <<< delete ResponseFormat.ignore
+delete_ :: AffjaxDriver -> URL -> Aff (Either Error Unit)
+delete_ driver = map void <<< delete driver ResponseFormat.ignore
 
 -- | Makes a `PATCH` request to the specified URL with the option to send data.
-patch :: forall a. ResponseFormat.ResponseFormat a -> URL -> RequestBody.RequestBody -> Aff (Either Error (Response a))
-patch rf u c = request (defaultRequest { method = Left PATCH, url = u, content = Just c, responseFormat = rf })
+patch :: forall a. AffjaxDriver -> ResponseFormat.ResponseFormat a -> URL -> RequestBody.RequestBody -> Aff (Either Error (Response a))
+patch driver rf u c = request driver (defaultRequest { method = Left PATCH, url = u, content = Just c, responseFormat = rf })
 
 -- | Makes a `PATCH` request to the specified URL with the option to send data
 -- | and ignores the response body.
-patch_ :: URL -> RequestBody.RequestBody -> Aff (Either Error Unit)
-patch_ url = map void <<< patch ResponseFormat.ignore url
+patch_ :: AffjaxDriver -> URL -> RequestBody.RequestBody -> Aff (Either Error Unit)
+patch_ driver url = map void <<< patch driver ResponseFormat.ignore url
 
 -- | Makes an HTTP request.
 -- |
