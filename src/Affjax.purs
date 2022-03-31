@@ -27,7 +27,7 @@ import Affjax.ResponseFormat as ResponseFormat
 import Affjax.ResponseHeader (ResponseHeader(..))
 import Affjax.StatusCode (StatusCode)
 import Control.Alt ((<|>))
-import Control.Monad.Except (runExcept)
+import Control.Monad.Except (Except, runExcept)
 import Data.Argonaut.Core (Json)
 import Data.Argonaut.Core as J
 import Data.Argonaut.Parser (jsonParser)
@@ -47,7 +47,7 @@ import Data.Time.Duration (Milliseconds(..))
 import Effect.Aff (Aff, try)
 import Effect.Aff.Compat as AC
 import Effect.Exception as Exn
-import Foreign (F, Foreign, ForeignError(..), fail, renderForeignError, unsafeReadTagged, unsafeToForeign)
+import Foreign (Foreign, ForeignError(..), fail, renderForeignError, unsafeReadTagged, unsafeToForeign)
 import Web.DOM (Document)
 import Web.File.Blob (Blob)
 import Web.XHR.FormData (FormData)
@@ -255,12 +255,12 @@ request driver req =
     Just h | not $ any (on eq RequestHeader.name h) hs -> hs `Arr.snoc` h
     _ -> hs
 
-  parseJSON :: String -> F Json
+  parseJSON :: String -> Except (NEL.NonEmptyList ForeignError) Json
   parseJSON = case _ of
     "" -> pure J.jsonEmptyObject
     str -> either (fail <<< ForeignError) pure (jsonParser str)
 
-  fromResponse :: Foreign -> F a
+  fromResponse :: Foreign -> Except (NEL.NonEmptyList ForeignError) a
   fromResponse = case req.responseFormat of
     ResponseFormat.ArrayBuffer _ -> unsafeReadTagged "ArrayBuffer"
     ResponseFormat.Blob _ -> unsafeReadTagged "Blob"
