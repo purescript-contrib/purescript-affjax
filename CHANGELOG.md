@@ -18,6 +18,9 @@ Breaking changes:
   as their first argument an `AffjaxDriver` value. Different environments
   will pass in their implementation for that driver and re-export
   the functionality defined in `affjax`.
+
+  To fix your code, depend on the corresponding library below and update the imported
+  module from `Affjax` to `Affjax.Node`/`Affjax.Web`:
   - If on Node.js, use [`purescript-affjax-node`](https://github.com/purescript-contrib/purescript-affjax-node/).
   - If on the brower, use [`purescript-affjax-web`](https://github.com/purescript-contrib/purescript-affjax-web/).
 
