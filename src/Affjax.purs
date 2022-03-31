@@ -21,19 +21,11 @@ module Affjax
 import Prelude
 
 import Affjax.RequestBody as RequestBody
-import Affjax.RequestHeader (RequestHeader)
-import Affjax.ResponseFormat as ResponseFormat
-import Affjax.ResponseHeader (ResponseHeader)
-import Affjax.StatusCode (StatusCode)
-import Data.Either (Either(..))
-import Data.HTTP.Method (Method(..), CustomMethod)
-import Data.Maybe (Maybe(..))
-import Data.Time.Duration (Milliseconds)
-import Effect.Exception as Exn
-import Foreign (Foreign, ForeignError, renderForeignError)
 import Affjax.RequestHeader (RequestHeader(..))
 import Affjax.RequestHeader as RequestHeader
+import Affjax.ResponseFormat as ResponseFormat
 import Affjax.ResponseHeader (ResponseHeader(..))
+import Affjax.StatusCode (StatusCode)
 import Control.Alt ((<|>))
 import Control.Monad.Except (runExcept)
 import Data.Argonaut.Core (Json)
@@ -46,7 +38,7 @@ import Data.Foldable (any)
 import Data.FormURLEncoded as FormURLEncoded
 import Data.Function (on)
 import Data.Function.Uncurried (Fn5, runFn5)
-import Data.HTTP.Method (Method(..))
+import Data.HTTP.Method (Method(..), CustomMethod)
 import Data.HTTP.Method as Method
 import Data.List.NonEmpty as NEL
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -54,7 +46,8 @@ import Data.Nullable (Nullable, toNullable)
 import Data.Time.Duration (Milliseconds(..))
 import Effect.Aff (Aff, try)
 import Effect.Aff.Compat as AC
-import Foreign (F, Foreign, ForeignError(..), fail, unsafeReadTagged, unsafeToForeign)
+import Effect.Exception as Exn
+import Foreign (F, Foreign, ForeignError(..), fail, renderForeignError, unsafeReadTagged, unsafeToForeign)
 import Web.DOM (Document)
 import Web.File.Blob (Blob)
 import Web.XHR.FormData (FormData)
