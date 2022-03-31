@@ -5,6 +5,21 @@ Notable changes to this project are documented in this file. The format is based
 ## [Unreleased]
 
 Breaking changes:
+- Update project and deps to PureScript v0.15.0 (#171 by @JordanMartinez)
+- Update all request functions to take a driver arg (#171 by @JordanMartinez)
+
+  Affjax works on the Node.js and browser environments by relying on a `require`
+  statement within a function. Depending on the environment detected,
+  either `XHR` or `XmlHttpRequest` is used. Since ES modules do not allow
+  one to call `import` within a function in a _synchronous_ way,
+  we cannot continue to use this approach.
+
+  Rather, all request-related functions (e.g. `request`, `get`, etc.) now take
+  as their first argument an `AffjaxDriver` value. Different environments
+  will pass in their implementation for that driver and re-export
+  the functionality defined in `affjax`.
+  - If on Node.js, use [`purescript-affjax-node`](https://github.com/purescript-contrib/purescript-affjax-node/).
+  - If on the brower, use [`purescript-affjax-web`](https://github.com/purescript-contrib/purescript-affjax-web/).
 
 New features:
 
