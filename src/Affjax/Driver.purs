@@ -9,7 +9,6 @@ module Affjax.Driver
   , delete_
   , patch
   , patch_
-  , Xhr
   , AffjaxDriver
   ) where
 
@@ -208,8 +207,6 @@ type AjaxRequest a =
   , withCredentials :: Boolean
   , timeout :: Number
   }
-
-foreign import data Xhr :: Type
 
 -- Drivers should have the following 'shape':
 -- ```
