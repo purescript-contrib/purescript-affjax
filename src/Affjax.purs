@@ -291,6 +291,10 @@ type AjaxRequest a =
 -- , fixupUrl :: Fn2 Xhr String String
 -- }
 -- ```
+-- If you're adding a new environment (e.g. Electron),
+-- be sure to re-export all the types and functions
+-- in the `Affjax` module, so people can easily
+-- update their code by changing the imported module
 foreign import data AffjaxDriver :: Type
 
 foreign import _ajax
