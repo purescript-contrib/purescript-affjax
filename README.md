@@ -7,64 +7,9 @@
 
 A library taking advantage of [`aff`](https://github.com/purescript-contrib/purescript-aff) to enable pain-free asynchronous AJAX requests and response handling.
 
-## Installation
-
-Install `affjax` with [Spago](https://github.com/purescript/spago):
-
-```sh
-spago install affjax
-```
-
-If you are using `affjax` in a Node.js setting you will also need to install an additional NPM dependency:
-
-```
-npm install xhr2
-```
-
-## Quick start
-
-You can construct requests with the `request` function:
-
-```purescript
-module Main where
-
-import Prelude
-
-import Affjax as AX
-import Affjax.ResponseFormat as ResponseFormat
-import Data.Argonaut.Core (stringify, fromString)
-import Data.Either (Either(..))
-import Data.HTTP.Method (Method(..))
-import Effect.Aff (launchAff)
-import Effect.Class.Console (log)
-
-main = void $ launchAff $ do
-  result <- AX.request (AX.defaultRequest { url = "/api", method = Left GET, responseFormat = ResponseFormat.json })
-  case result of
-    Left err -> log $ "GET /api response failed to decode: " <> AX.printError err
-    Right response -> log $ "GET /api response: " <> stringify response.body
-```
-
-(`defaultRequest` is a record value that has all the required fields pre-set for convenient overriding when making a request.)
-
-There are also a number of helpers for common `get`, `post`, `put`, `delete`, and `patch` cases:
-
-```purescript
-import Affjax.RequestBody as RequestBody
-import Data.Maybe (Maybe(..))
-import Effect.Aff (launchAff_)
-
-main = launchAff_ do
-  result1 <- AX.get ResponseFormat.json "/api"
-  case result1 of
-    Left err -> log $ "GET /api response failed to decode: " <> AX.printError err
-    Right response -> log $ "GET /api response: " <> stringify response.body
-
-  result2 <- AX.post ResponseFormat.json "/api" (Just (RequestBody.json (fromString "test")))
-  case result2 of
-    Left err -> log $ "POST /api response failed to decode: " <> AX.printError err
-    Right response -> log $ "POST /api response: " <> stringify response.body
-```
+This library provides types and common functionality that work across environments (e.g. Node, browser), but **it does not work out-of-box**. Rather, use the environment-specific library instead:
+- Browser environment: [`purescript-affjax-web`](https://github.com/purescript-contrib/purescript-affjax-web)
+- Node environment: [`purescript-affjax-node`](https://github.com/purescript-contrib/purescript-affjax-node)
 
 ## Documentation
 
