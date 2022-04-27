@@ -1,3 +1,13 @@
+-- | Note: this module is not intended to be used by end-users.
+-- | Rather, use the environment-specific library instead:
+-- | - [`purescript-affjax-node`](https://github.com/purescript-contrib/purescript-affjax-node)
+-- | - [`purescript-affjax-web`](https://github.com/purescript-contrib/purescript-affjax-web)
+-- |
+-- | You should use this module if you are writing a driver for a specific environment.
+-- | See this module's source code for more details.
+-- If you want to write a driver for an environment, see the comments
+-- for the `AffjaxDriver` type and look at the `node` and `web` libraries
+-- (linked above) as examples.
 module Affjax
   ( Request
   , defaultRequest
