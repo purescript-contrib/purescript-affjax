@@ -5,6 +5,16 @@ Notable changes to this project are documented in this file. The format is based
 ## [Unreleased]
 
 Breaking changes:
+
+New features:
+
+Bugfixes:
+
+Other improvements:
+
+## [v13.0.0](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v13.0.0) - 2022-04-28
+
+Breaking changes:
 - Update project and deps to PureScript v0.15.0 (#171 by @JordanMartinez)
 - Update all request functions to take a driver arg (#171 by @JordanMartinez)
 
