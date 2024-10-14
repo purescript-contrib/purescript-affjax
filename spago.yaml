@@ -1,0 +1,34 @@
+package:
+  name: affjax
+  description: An asynchronous AJAX library built using Aff.
+  publish:
+    license: Apache-2.0
+    version: 14.0.0
+    location:
+      githubOwner: purescript-contrib
+      githubRepo: purescript-affjax
+  dependencies:
+    - aff
+    - argonaut-core
+    - arraybuffer-types
+    - arrays
+    - control
+    - datetime
+    - either
+    - exceptions
+    - foldable-traversable
+    - foreign
+    - form-urlencoded
+    - functions
+    - http-methods
+    - lists
+    - maybe
+    - media-types
+    - newtype
+    - nullable
+    - prelude
+    - transformers
+    - web-dom
+    - web-file
+    - web-xhr
+workspace: {}

@@ -8,6 +8,7 @@
 A library taking advantage of [`aff`](https://github.com/purescript-contrib/purescript-aff) to enable pain-free asynchronous AJAX requests and response handling.
 
 This library provides types and common functionality that work across environments (e.g. Node, browser), but **it does not work out-of-box**. Rather, use the environment-specific library instead:
+
 - Browser environment: [`purescript-affjax-web`](https://github.com/purescript-contrib/purescript-affjax-web)
 - Node environment: [`purescript-affjax-node`](https://github.com/purescript-contrib/purescript-affjax-node)
 

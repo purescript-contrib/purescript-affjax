@@ -10,12 +10,12 @@ export function _ajax(platformSpecificDriver, timeoutErrorMessageIdent, requestF
           xhr.setRequestHeader(header.field, header.value);
         }
       } catch (e) {
-        errback(e);
+        return errback(e);
       }
     }
     var onerror = function (msgIdent) {
       return function () {
-        errback(new Error(msgIdent));
+        return errback(new Error(msgIdent));
       };
     };
     xhr.onerror = onerror(requestFailedMessageIdent);
@@ -40,7 +40,7 @@ export function _ajax(platformSpecificDriver, timeoutErrorMessageIdent, requestF
     xhr.timeout = options.timeout;
     xhr.send(options.content);
 
-    return function (error, cancelErrback, cancelCallback) {
+    return function (_error, cancelErrback, cancelCallback) {
       try {
         xhr.abort();
       } catch (e) {
