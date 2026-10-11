@@ -11,6 +11,10 @@ New features:
 Bugfixes:
 
 Other improvements:
+
+## [v13.0.1](https://github.com/purescript-contrib/purescript-affjax/releases/tag/v13.0.1) - 2026-10-10
+
+Other improvements:
 - Migrate to registry-backed Spago, preserving published dependency ranges.
 - Update repository tooling and CI actions.
 
