@@ -1,0 +1,35 @@
+package:
+  name: affjax
+  dependencies:
+    - aff: ">=7.0.0 <9.0.0"
+    - argonaut-core: ">=7.0.0 <8.0.0"
+    - arraybuffer-types: ">=3.0.2 <4.0.0"
+    - arrays: ">=7.0.0 <8.0.0"
+    - control: ">=6.0.0 <7.0.0"
+    - datetime: ">=6.0.0 <7.0.0"
+    - either: ">=6.0.0 <7.0.0"
+    - exceptions: ">=6.0.0 <7.0.0"
+    - foldable-traversable: ">=6.0.0 <7.0.0"
+    - foreign: ">=7.0.0 <8.0.0"
+    - form-urlencoded: ">=7.0.0 <8.0.0"
+    - functions: ">=6.0.0 <7.0.0"
+    - http-methods: ">=6.0.0 <7.0.0"
+    - lists: ">=7.0.0 <8.0.0"
+    - maybe: ">=6.0.0 <7.0.0"
+    - media-types: ">=6.0.0 <7.0.0"
+    - newtype: ">=5.0.0 <6.0.0"
+    - nullable: ">=6.0.0 <7.0.0"
+    - prelude: ">=6.0.0 <7.0.0"
+    - transformers: ">=6.0.0 <7.0.0"
+    - web-dom: ">=6.0.0 <7.0.0"
+    - web-file: ">=4.0.0 <5.0.0"
+    - web-xhr: ">=5.0.0 <6.0.0"
+  publish:
+    version: 13.0.1
+    license: Apache-2.0
+    location:
+      githubOwner: purescript-contrib
+      githubRepo: purescript-affjax
+workspace:
+  packageSet:
+    registry: 81.4.0
